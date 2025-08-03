@@ -179,3 +179,11 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Project-specific ignores
+# -------------------------
+# Ignore the virtual environment folder
+venv/
+
+# Ignore the data folder to avoid uploading large or private datasets
+data/
