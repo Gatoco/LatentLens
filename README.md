@@ -1,76 +1,76 @@
-# LatentLens: Un Sistema Híbrido de Recomendación de Películas
+# LatentLens: A Hybrid Movie Recommendation System
 
 ![Status](https://img.shields.io/badge/Status-Work%20In%20Progress-orange)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)
 ![Scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?logo=scikit-learn&logoColor=white)
 ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?logo=pandas&logoColor=white)
 
-Este proyecto es un sistema de recomendación de películas de punta a punta, diseñado para ir más allá de los algoritmos básicos y construir una solución robusta y desplegable.
+This project is an end-to-end movie recommendation system, designed to go beyond basic algorithms and build a robust, deployable solution.
 
 ---
 
-### Índice
-1. [El Problema](#-el-problema-la-paradoja-de-la-elección)
-2. [El Dataset](#-el-dataset-movielens-25m)
-3. [Metodología Implementada](#-metodología-implementada)
-4. [✨ Demo: Resultados Preliminares](#-demo-resultados-preliminares)
-5. [Estructura del Proyecto](#-estructura-del-proyecto)
-6. [Roadmap y Próximos Pasos](#-roadmap-y-próximos-pasos)
+### Table of Contents
+1. [The Problem: The Paradox of Choice](#-the-problem-the-paradox-of-choice)
+2. [The Dataset: MovieLens 25M](#-the-dataset-movielens-25m)
+3. [Implemented Methodology](#-implemented-methodology)
+4. [✨ Demo: Preliminary Results](#-demo-preliminary-results)
+5. [Project Structure](#-project-structure)
+6. [Roadmap and Next Steps](#-roadmap-and-next-steps)
 
 ---
 
-## 🎯 El Problema: La Paradoja de la Elección
+## 🎯 The Problem: The Paradox of Choice
 
-En la era del streaming, nos enfrentamos a catálogos con decenas de miles de películas. Esta abundancia, en lugar de ser una ventaja, a menudo conduce a la "parálisis por análisis". El objetivo de `LatentLens` es analizar el comportamiento del usuario y las características de las películas para ofrecer recomendaciones personalizadas y relevantes que se sientan como si vinieran de un amigo experto en cine.
+In the age of streaming, we face catalogs with tens of thousands of movies. This abundance, rather than being an advantage, often leads to "analysis paralysis." The goal of `LatentLens` is to analyze user behavior and movie features to deliver personalized, relevant recommendations that feel like they're coming from a film-savvy friend.
 
-## 📊 El Dataset: MovieLens 25M
+## 📊 The Dataset: MovieLens 25M
 
-Utilizamos el prestigioso dataset **MovieLens 25M**, que contiene **25 millones de calificaciones** de más de 162,000 usuarios sobre 62,000 películas. Un Análisis Exploratorio de Datos (EDA) inicial fue crucial para guiar el diseño del modelo, revelando una alta escasez de datos (42% de las películas con menos de 5 votos) y el comportamiento distinto de los "power users".
+We use the renowned **MovieLens 25M** dataset, which contains **25 million ratings** from over 162,000 users for 62,000 movies. An initial Exploratory Data Analysis (EDA) was crucial for guiding the model's design, revealing high data sparsity (42% of movies with fewer than 5 ratings) and the distinct behavior of "power users."
 
-## 🛠️ Metodología Implementada
+## 🛠️ Implemented Methodology
 
-Hasta ahora, se han implementado y comparado dos modelos principales:
+So far, two main models have been implemented and compared:
 
-### Modelo Baseline: Popularidad Ponderada
-Este primer modelo simple sirve como un punto de referencia. No es personalizado. Recomienda las películas mejor calificadas del catálogo, pero solo considera aquellas que han superado un umbral mínimo de votos. Esto evita la "trampa de la película de culto" (películas con una calificación perfecta pero muy pocos votos) y asegura que las recomendaciones sean populares y de alta calidad general.
+### Baseline Model: Weighted Popularity
+This first, simple model serves as a baseline. It's not personalized. It recommends the highest-rated movies in the catalog, but only considers those that have surpassed a minimum threshold of votes. This avoids the "cult classic trap" (movies with a perfect rating but very few votes) and ensures the recommendations are both popular and of high overall quality.
 
-### Modelo Principal: Filtrado Colaborativo (K-Nearest Neighbors)
-Este es nuestro primer modelo de Machine Learning. Funciona bajo el principio de "los usuarios a los que les gustaron las mismas cosas que a ti, probablemente compartirán otros gustos contigo".
-1.  **Matriz Usuario-Película:** Se construye una matriz donde las filas son películas y las columnas son usuarios.
-2.  **Manejo de Memoria:** Debido al `MemoryError` inicial al intentar crear una matriz de 71GB, el dataset fue filtrado estratégicamente para prototipar con los 40,000 usuarios más activos y las 20,000 películas más populares. Esto redujo el problema a un tamaño manejable sin perder la densidad de la información.
-3.  **Algoritmo:** Se utiliza `NearestNeighbors` de `scikit-learn` con la similitud del coseno para encontrar las películas que se encuentran "más cerca" unas de otras en el "mapa de gustos" de los usuarios.
+### Main Model: Collaborative Filtering (K-Nearest Neighbors)
+This is our first Machine Learning model. It operates on the principle: *"users who liked the same things you did will likely share other tastes with you."*
+1.  **User-Item Matrix:** A matrix is built where rows represent movies and columns represent users.
+2.  **Memory Management:** Due to the initial `MemoryError` when attempting to create a 71GB matrix, the dataset was strategically filtered to prototype with the 40,000 most active users and the 20,000 most popular movies. This reduced the problem to a manageable size without losing informational density.
+3.  **Algorithm:** Scikit-learn's `NearestNeighbors` is used with cosine similarity to find the movies that are "closest" to each other on the user "taste map."
 
-## ✨ Demo: Resultados Preliminares
-Los resultados del modelo de Filtrado Colaborativo (KNN) demuestran una comprensión profunda de las conexiones cinematográficas, recomendando no solo por género, sino por "prestigio", director y estilo.
+## ✨ Demo: Preliminary Results
+The results from the Collaborative Filtering (KNN) model demonstrate a deep understanding of cinematic connections, recommending not just by genre, but by "prestige," director, and style.
 
-**Recomendaciones si te gustó 'The Godfather (1972)':**
+**Recommendations if you liked 'The Godfather (1972)':**
 ```text
 - Godfather: Part II, The (1974)
 - Pulp Fiction (1994)
 - Goodfellas (1990)
 - Silence of the Lambs, The (1991)
-- Shawshank Redemption, The (1994)```
-
-**Recomendaciones si te gustó 'Goodfellas (1990)':**
-```text
+- Shawshank Redemption, The (1994)
+Use code with caution.
+Markdown
+Recommendations if you liked 'Goodfellas (1990)':
+Generated text
 - Godfather, The (1972)
 - Pulp Fiction (1994)
 - Godfather: Part II, The (1974)
 - Reservoir Dogs (1992)
 - Fargo (1996)
-```
-
-## 📁 Estructura del Proyecto
-El proyecto sigue una estructura profesional para asegurar la modularidad y la reproducibilidad:
-- ``/data``: Contiene el dataset (ignorado por Git).
-- ``/notebooks``: Almacena los Jupyter Notebooks para la exploración y el prototipado.
-- ``/src``: Contiene el código fuente modularizado de Python (ej: `data_loader.py`).
-- `setup.py`: Hace que el proyecto sea instalable y que los módulos en `/src` sean accesibles.
-
-## 🚀 Roadmap y Próximos Pasos
-- [x] Implementar un modelo Baseline.
-- [x] Implementar un modelo de Filtrado Colaborativo (KNN).
-- [ ] **Métrica:** Calcular el RMSE del modelo para evaluar su precisión de forma cuantitativa.
-- [ ] **API:** Exponer el modelo entrenado a través de una API REST con FastAPI.
-- [ ] **MLflow:** Integrar MLflow para registrar experimentos y artefactos del modelo.
-- [ ] **Docker:** Dockerizar la aplicación completa para un despliegue sencillo.
+Use code with caution.
+Text
+📁 Project Structure
+The project follows a professional structure to ensure modularity and reproducibility:
+/data: Contains the dataset (ignored by Git).
+/notebooks: Stores Jupyter Notebooks for exploration and prototyping.
+/src: Contains the modularized Python source code (e.g., data_loader.py).
+setup.py: Makes the project installable and allows the modules in /src to be imported across the project.
+🚀 Roadmap and Next Steps
+Implement a Baseline model.
+Implement a Collaborative Filtering (KNN) model.
+Metrics: Calculate the model's RMSE to quantitatively evaluate its accuracy.
+API: Expose the trained model via a REST API with FastAPI.
+MLflow: Integrate MLflow to log experiments and model artifacts.
+Docker: Dockerize the entire application for simple, reproducible deployment.
