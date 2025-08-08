@@ -1,0 +1,10 @@
+artifact_location: file:///c:/Users/Gat/Documents/GitHub/LatentLens/notebooks/mlruns/515370813378098532/models/m-104d2c82cfa546bfadcad2239877c749/artifacts
+creation_timestamp: 1754601297430
+experiment_id: '515370813378098532'
+last_updated_timestamp: 1754601338603
+model_id: m-104d2c82cfa546bfadcad2239877c749
+model_type: null
+name: surprise_svd_model
+source_run_id: d1199ff9731644d7b2152085fbf99353
+status: 2
+status_message: null

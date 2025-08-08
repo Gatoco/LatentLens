@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/Gat/Documents/GitHub/LatentLens/notebooks/mlruns/134408430978653125/cad377c367094d5883d732d70a77fe2e/artifacts
+end_time: 1754600466248
+entry_point_name: ''
+experiment_id: '134408430978653125'
+lifecycle_stage: active
+run_id: cad377c367094d5883d732d70a77fe2e
+run_name: upset-wolf-624
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754600465128
+status: 4
+tags: []
+user_id: Gat

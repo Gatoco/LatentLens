@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/Gat/Documents/GitHub/LatentLens/notebooks/mlruns/515370813378098532/b3810077075d49af83e4d6e5421ccd61/artifacts
+end_time: 1754603320213
+entry_point_name: ''
+experiment_id: '515370813378098532'
+lifecycle_stage: active
+run_id: b3810077075d49af83e4d6e5421ccd61
+run_name: nebulous-foal-418
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754603002976
+status: 3
+tags: []
+user_id: Gat
