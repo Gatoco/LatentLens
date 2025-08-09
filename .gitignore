@@ -187,3 +187,4 @@ venv/
 
 # Ignore the data folder to avoid uploading large or private datasets
 data/
+mlruns/
