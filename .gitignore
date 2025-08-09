@@ -189,3 +189,6 @@ venv/
 data/
 notebooks/mlruns/
 mlruns/
+# Ignore the model files to prevent uploading large models
+models/ 
+bfg-1.15.0.jar
