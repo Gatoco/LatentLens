@@ -1,6 +1,6 @@
-artifact_location: mlflow-artifacts:/0
-creation_time: 1754594782579
+artifact_location: file:///c:/Users/Gat/Documents/GitHub/LatentLens/mlruns/0
+creation_time: 1754761707151
 experiment_id: '0'
-last_update_time: 1754594782579
+last_update_time: 1754761707151
 lifecycle_stage: active
 name: Default
