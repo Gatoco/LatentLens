@@ -1,0 +1,35 @@
+# Versión del formato de Docker Compose. Es una buena práctica definirla.
+version: '3.8'
+
+# La sección donde definimos a todos nuestros "músicos" (servicios).
+services:
+
+  # --- Primer Músico: Nuestra API de FastAPI ---
+  api:
+    # Instrucción para construir este servicio.
+    # Usa el Dockerfile que se encuentra en el directorio actual (.).
+    build: .
+    # Mapea el puerto 8000 de tu máquina al puerto 8000 del contenedor.
+    ports:
+      - "8000:8000"
+    # Crea un "portal" entre la carpeta ./mlruns de tu PC y una carpeta
+    # /app/mlruns dentro del contenedor. Así la API puede acceder a los modelos.
+    volumes:
+      - ./mlruns:/app/mlruns
+    # Le da un nombre de host predecible al contenedor dentro de la red de Docker.
+    hostname: latentlens-api
+
+  # --- Segundo Músico: La UI de MLflow ---
+  mlflow-ui:
+    # No construimos esto. Usamos una imagen pre-fabricada y oficial de MLflow.
+    image: ghcr.io/mlflow/mlflow:v3.2.0
+    # Mapea el puerto 5000 de tu máquina al puerto 5000 del contenedor.
+    ports:
+      - "5000:5000"
+    # Crea un portal a la MISMA carpeta ./mlruns, pero la monta
+    # dentro de este contenedor en /mlruns.
+    volumes:
+      - ./mlruns:/mlruns
+    # El comando que se ejecuta al arrancar para que la UI se inicie
+    # y sepa dónde buscar los datos.
+    command: mlflow ui --host 0.0.0.0 --backend-store-uri /mlruns

@@ -192,3 +192,15 @@ mlruns/
 # Ignore the model files to prevent uploading large models
 models/ 
 bfg-1.15.0.jar
+
+# --- Archivos de MLflow ---
+# Nunca deben ser versionados. Son resultados, no código.
+mlruns/
+
+# --- Artefactos de Modelos ---
+# Los modelos binarios son grandes y no deben estar en Git.
+*.pkl
+*.jar
+
+# --- Archivos específicos de Notebooks ---
+.ipynb_checkpoints/
