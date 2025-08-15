@@ -1,0 +1,37 @@
+# Inbox de documentación (importación desde Obsidian)
+
+Este directorio sirve para importar tus notas de Obsidian al repositorio y convertirlas en documentación, issues y roadmap.
+
+Estructura
+- `docs/_inbox/`: coloca aquí tus archivos `.md` tal cual están en Obsidian (wikilinks `[[...]]` incluidos).
+- `docs/_assets/`: coloca aquí imágenes y adjuntos referenciados por tus notas.
+
+Convenciones al importar
+- Mantén formato Markdown (.md). No subas la carpeta `.obsidian/` ni archivos con credenciales.
+- Imágenes: ponlas en `docs/_assets/` y referéncialas con rutas relativas:
+  - Ejemplo: `![EDA 1](../_assets/eda_dist_ratings.png)`
+- Nombres sugeridos para notas clave (puedes adaptarlos):
+  - `q1-plan.md`, `metrics.md`, `api-design.md`, `backlog-semanal-YYYY-WW.md`, `eda-inicial.md`
+- (Opcional) Cabecera de contexto al inicio de cada nota:
+  ```
+  ---
+  objetivo: "Describir metas del Q1"
+  estado: "borrador|en progreso|final"
+  prioridad: "P1|P2|P3"
+  ---
+  ```
+
+Checklist antes de abrir PR
+- [ ] Los `.md` están en `docs/_inbox/`
+- [ ] Las imágenes/adjuntos están en `docs/_assets/`
+- [ ] No hay datos sensibles (tokens, claves, correos personales)
+- [ ] Total de assets razonable (<50 MB). Si supera eso, considera Git LFS más adelante.
+
+Siguientes pasos tras el PR
+1. Convertiré `[[wikilinks]]` a enlaces relativos y normalizaré títulos/tablas.
+2. Propondré estructura final: `docs/roadmap.md`, `docs/q1-plan.md`, `docs/metrics.md`, `docs/api.md`.
+3. (Opcional) Generaré milestones e issues a partir de tus notas y crearé un Project board.
+
+Dudas rápidas
+- ¿Puedo pegar notas enormes? Sí. Si pesan mucho, divídelas por secciones lógicas (p. ej., “Q1”, “Métricas”, “Backlog”).
+- ¿Y si tengo imágenes embebidas con rutas de Obsidian? No te preocupes; en la primera pasada reescribo las rutas a `docs/_assets/`.
