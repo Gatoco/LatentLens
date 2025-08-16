@@ -11,6 +11,9 @@ scikit-learn==1.3.2
 pandas==2.3.1
 numpy==1.26.4
 
+# --- Testing ---
+pytest>=7.0.0
+
 # --- Dependencias de MLflow/FastAPI ---
 # No es necesario añadirlas todas a mano, pip las resolverá,
 # pero estas son las esenciales que a menudo se necesitan.

@@ -38,4 +38,4 @@ jobs:
       # los tests se ejecuten en un entorno idéntico al de producción.
       # --rm elimina el contenedor automáticamente después de que termina.
       - name: Run tests with pytest
-        run: docker run --rm latentlens:latest pytest
+        run: docker run --rm latentlens:latest python -m pytest
