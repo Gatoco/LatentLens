@@ -1,40 +1,41 @@
-# GitHub Actions Workflow for LatentLens
-# This workflow runs on every push and pull request to main branch
+# Nombre del workflow, visible en la UI de GitHub Actions.
+name: LatentLens CI
 
-name: CI/CD Pipeline
-
+# Define los eventos que dispararán la ejecución de este workflow.
 on:
+  # Se activa en cualquier 'push' a la rama 'main'.
   push:
     branches: [ main ]
+  # Se activa cuando se crea o actualiza un 'Pull Request' dirigido a 'main'.
   pull_request:
     branches: [ main ]
 
+# Define el conjunto de trabajos a ejecutar.
 jobs:
-  test:
+  # Identificador único para nuestro trabajo.
+  build-and-test:
+    # Define el tipo de máquina virtual que GitHub proveerá para ejecutar el trabajo.
+    # 'ubuntu-latest' es el estándar recomendado.
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.10]
 
+    # Define la secuencia de pasos que componen el trabajo.
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -e .
-    
-    - name: Run tests
-      run: |
-        python -m pytest tests/ -v
-    
-    - name: Run linting (optional)
-      run: |
-        python -m flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-      continue-on-error: true
+      # --- Paso 1: Checkout del Código ---
+      # Utiliza una acción predefinida de GitHub (actions/checkout)
+      # para clonar el código del repositorio en la máquina virtual.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Paso 2: Construcción de la Imagen de Docker ---
+      # Ejecuta un comando de shell estándar para construir la imagen.
+      # -t asigna un nombre (tag) a la imagen para referenciarla después.
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag latentlens:latest
+
+      # --- Paso 3: Ejecución de Tests dentro del Contenedor ---
+      # Ejecuta la suite de tests (pytest) dentro de un nuevo contenedor
+      # creado a partir de la imagen del paso anterior. Esto garantiza que
+      # los tests se ejecuten en un entorno idéntico al de producción.
+      # --rm elimina el contenedor automáticamente después de que termina.
+      - name: Run tests with pytest
+        run: docker run --rm latentlens:latest pytest

@@ -36,8 +36,13 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Ahora copiamos nuestro código fuente, como antes.
+# Ahora copiamos nuestro código fuente, tests y configuración.
 COPY ./src /app/src
+COPY ./tests /app/tests
+COPY setup.py /app/
+
+# Instalamos el paquete en modo editable para que pytest funcione
+RUN pip install -e .
 
 # Exponemos el puerto y definimos el comando de inicio, como antes.
 EXPOSE 8000
