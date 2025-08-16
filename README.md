@@ -3,6 +3,157 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Work%20In%20Progress-orange" alt="Status">
+  <img src="https://github.com/Gatoco/LatentLens/actions/workflows/main.yml/badge.svg" alt="CI/CD Pipeline">
+  <img src="https://img.shields.io/badge/Python-3.10-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-0.116.1-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/MLflow-3.2.0-9457EB?logo=mlflow&logoColor=white" alt="MLflow">
+  <img src="https://img.shields.io/badge/scikit--learn-1.3.2-F7931E?logo=scikit-learn&logoColor=white" alt="scikit-learn">
+  <img src="https://img.shields.io/badge/pandas-2.3.1-150458?logo=pandas&logoColor=white" alt="pandas">
+  <img src="https://img.shields.io/badge/Surprise-1.1.4-yellow?logo=python" alt="Surprise">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/License-MIT-black" alt="License">
+</p>
+
+> LatentLens blends popularity baselines with collaborative filtering (KNN, SVD) to deliver movie recommendations at scale. Built with a clean src-layout, MLflow tracking, and a FastAPI service layer.
+
+---
+
+## 🚦 Current Status & Context
+
+- **API**: FastAPI app with `/health` endpoint; recommendation endpoints in development.
+- **CI/CD**: GitHub Actions pipeline ✅ (Docker build + tests).
+- **Experiments**: MLflow tracking locally (`./mlruns/`); artifacts gitignored.
+- **Docker**: Multi-stage build optimized for production.
+- **Tests**: Passing locally and in CI using pytest.
+
+---
+
+## 🚀 Cómo Ejecutarlo
+
+### Opción 1: Docker (Recomendado)
+
+**Requisitos**: Docker Desktop instalado y ejecutándose.
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/Gatoco/LatentLens.git
+cd LatentLens
+
+# 2. Construir la imagen Docker
+docker build -t latentlens:latest .
+
+# 3. Ejecutar el contenedor
+docker run --rm -p 8000:8000 latentlens:latest
+
+# 4. Verificar que funciona
+curl http://localhost:8000/health
+# Respuesta esperada: {"status":"ok"}
+```
+
+### Opción 2: Entorno Local
+
+**Requisitos**: Python 3.10, Git.
+
+```bash
+# 1. Crear entorno virtual
+python -m venv venv
+
+# 2. Activar entorno (Windows)
+./venv/Scripts/Activate.ps1
+# O en Linux/Mac:
+# source venv/bin/activate
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+pip install -e .
+
+# 4. Ejecutar tests (opcional)
+python -m pytest -q
+
+# 5. Iniciar la API
+python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# 6. Verificar funcionamiento
+# Navegar a: http://localhost:8000/health
+```
+
+### Ejecutar Experimentos MLflow
+
+```bash
+# 1. Asegurar que el entorno esté activado
+# 2. Ejecutar notebooks Jupyter
+jupyter notebook notebooks/
+
+# 3. Ver experimentos en MLflow UI (opcional)
+mlflow ui --backend-store-uri ./mlruns
+# Navegar a: http://localhost:5000
+```
+
+---
+
+## 🏗️ Arquitectura Técnica
+
+### Stack Principal
+
+```mermaid
+graph TB
+    A[FastAPI Service] --> B[src/main.py]
+    B --> C[Data Processing]
+    C --> D[ML Models]
+    D --> E[MLflow Tracking]
+    
+    F[Docker Container] --> A
+    G[GitHub Actions] --> H[CI/CD Pipeline]
+    H --> F
+    
+    I[Jupyter Notebooks] --> D
+    I --> E
+    
+    J[MovieLens Dataset] --> C
+```
+
+### Componentes Clave
+
+#### 🔧 **API Layer (FastAPI)**
+- **Ubicación**: `src/main.py`
+- **Responsabilidad**: Endpoints REST, validación de requests, serialización JSON
+- **Endpoints actuales**:
+  - `GET /health` - Health check para monitoring
+  - **Próximos**: `POST /recommend`, `GET /movies/{id}`
+
+#### 📊 **Data Processing Layer**
+- **Ubicación**: `src/data_loader.py`, `src/preprocessing.py`
+- **Responsabilidad**: 
+  - Carga y limpieza de datos MovieLens
+  - Transformación de ratings a matrices sparse
+  - Filtrado por actividad de usuarios y popularidad de items
+
+#### 🤖 **ML Models Layer**
+- **Frameworks**: scikit-surprise, scikit-learn
+- **Modelos implementados**:
+  - **Baseline**: Weighted popularity (reduce bias por pocos votos)
+  - **Collaborative Filtering**: KNN (cosine similarity), SVD (matrix factorization)
+- **Evaluación**: RMSE, cross-validation
+
+#### 📈 **MLflow Tracking**
+- **Ubicación**: `./mlruns/` (local), ignorado por Git
+- **Tracking**: Métricas (RMSE), parámetros (k_neighbors, n_factors), artifacts (modelos)
+- **Reproducibilidad**: Cada experimento registra código, datos y entorno
+
+#### 🐳 **Containerization**
+- **Multi-stage build**:
+  - **Builder stage**: Python 3.10 full + build tools + git
+  - **Runtime stage**: Python 3.10-slim + app code
+- **Optimizaciones**: Layer caching, pip wheels, non-root user
+
+#### ⚙️ **CI/CD (GitHub Actions)**
+- **Trigger**: Push/PR a `main`
+- **Pipeline**: 
+  1. Checkout código
+  2. Build imagen Docker
+  3. Run tests dentro del contenedor
+- **Beneficio**: Tests en entorno idéntico a produccióner">
+  <img src="https://img.shields.io/badge/Status-Work%20In%20Progress-orange" alt="Status">
   <img src="https://img.shields.io/badge/Python-3.10-blue?logo=python" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-0.116.1-009688?logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/MLflow-3.2.0-9457EB?logo=mlflow&logoColor=white" alt="MLflow">
@@ -113,9 +264,13 @@ setup.py
 - [x] Collaborative filtering (KNN, SVD) + RMSE
 - [x] MLflow local tracking
 - [x] Docker multi-stage build (builder + slim)
-- [ ] REST endpoints for recommendations
-- [ ] CI and publishing (after history cleanup)
+- [x] CI/CD pipeline with GitHub Actions
+- [x] Comprehensive documentation
+- [ ] REST endpoints for recommendations (`/recommend`, `/movies/{id}`)
+- [ ] Model serving and caching layer
 - [ ] Hyperparameter sweeps and model registry
+- [ ] Production deployment (AWS/GCP/Azure)
+- [ ] Monitoring and logging
 
 ---
 
