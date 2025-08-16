@@ -1,19 +1,47 @@
 
-# FastAPI framework import for API construction
+"""
+LatentLens FastAPI Application
+
+This module defines the main FastAPI application for the LatentLens movie 
+recommendation system. It provides REST API endpoints for health checks 
+and will include movie recommendation endpoints in future iterations.
+
+Author: LatentLens Team
+License: MIT
+"""
+
 from fastapi import FastAPI
 
-# Application instance: central object for all API routes and configuration
-app = FastAPI(
-    title="LatentLens API",
-    description="LatentLens movie recommendation system API.",
+# Application instance with comprehensive metadata for API documentation
+application_instance = FastAPI(
+    title="LatentLens Movie Recommendation API",
+    description="A hybrid recommendation system for movies using collaborative filtering and popularity baselines.",
     version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Health check endpoint for service monitoring and deployment validation
-@app.get("/health")
-def health_check():
+
+@application_instance.get("/health")
+def get_health_status():
     """
-    Health check endpoint. Returns status 'ok' if the API is running.
-    Used for automated monitoring and deployment verification.
+    Health check endpoint for service monitoring.
+    
+    This endpoint is used by load balancers, monitoring systems, and 
+    deployment pipelines to verify that the API service is running 
+    and responding to requests.
+    
+    Returns:
+        dict: A dictionary containing the service status.
+            - status (str): Always "ok" when the service is healthy.
+    
+    Example:
+        GET /health
+        Response: {"status": "ok"}
     """
-    return {"status": "ok"}
+    health_response = {"status": "ok"}
+    return health_response
+
+
+# Export the app instance for uvicorn and other ASGI servers
+app = application_instance

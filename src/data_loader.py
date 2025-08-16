@@ -1,56 +1,171 @@
-import pandas as pd
+"""
+Data Loading Module for LatentLens
+
+This module provides functions to load and preprocess the MovieLens 25M dataset.
+It handles path resolution, data loading, and basic data cleaning operations
+in a robust and reusable manner.
+
+Author: LatentLens Team
+License: MIT
+"""
+
 import os
 import sys
+from typing import Tuple, Optional
+import pandas as pd
 
-# --- Configuración de Rutas a Prueba de Balas ---
-# Este bloque asegura que el script pueda encontrar la carpeta de datos
-# sin importar si lo corremos desde el notebook (en /notebooks) o desde la terminal.
 
-# Obtenemos la ruta absoluta del directorio donde se encuentra este archivo (`src/`)
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Subimos un nivel para llegar a la raíz del proyecto (`LatentLens/`)
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-
-# Construimos la ruta completa a la carpeta de datos
-DATASET_FOLDER = os.path.join(PROJECT_ROOT, 'data', 'ml-25m')
-# -----------------------------------------------
-
-def load_and_prepare_data():
+# Path configuration with cross-platform compatibility
+def get_project_paths() -> Tuple[str, str]:
     """
-    Carga los datasets de movies y ratings del dataset MovieLens 25M, 
-    los une en un solo DataFrame y realiza un preprocesamiento básico.
+    Get the absolute paths for the project root and dataset folder.
+    
+    This function ensures that data loading works regardless of where
+    the script is executed from (notebooks/, src/, or project root).
     
     Returns:
-        pd.DataFrame: DataFrame combinado con datos limpios.
+        Tuple[str, str]: A tuple containing:
+            - project_root_path (str): Absolute path to the project root
+            - dataset_folder_path (str): Absolute path to the ml-25m dataset folder
     """
-    print("Cargando los datasets...")
+    current_script_directory = os.path.dirname(os.path.abspath(__file__))
+    project_root_path = os.path.dirname(current_script_directory)
+    dataset_folder_path = os.path.join(project_root_path, 'data', 'ml-25m')
     
-    # Usamos os.path.join para construir las rutas de los archivos CSV de forma segura
-    movies_df = pd.read_csv(os.path.join(DATASET_FOLDER, 'movies.csv'))
-    ratings_df = pd.read_csv(os.path.join(DATASET_FOLDER, 'ratings.csv'))
-    
-    print(f"Datos de películas cargados: {len(movies_df)} filas.")
-    print(f"Datos de calificaciones cargados: {len(ratings_df)} filas.")
-    
-    # --- PREPROCESAMIENTO BÁSICO ---
-    
-    # Unimos los DataFrames de ratings y películas para tener el título de la película en la misma tabla
-    df = pd.merge(ratings_df, movies_df, on='movieId', how='left')
-    
-    # Omitimos el timestamp y los géneros por ahora (los usaremos en meses posteriores)
-    df = df.drop(columns=['timestamp', 'genres'], errors='ignore')
+    return project_root_path, dataset_folder_path
 
-    print("Preprocesamiento completado. DataFrame final listo.")
-    
-    return df
 
-# --- Bloque de Prueba para la Ejecución Aislada ---
+def load_movieLens_datasets() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Load the movies and ratings datasets from MovieLens 25M.
+    
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing:
+            - movies_dataframe (pd.DataFrame): Movies data with columns [movieId, title, genres]
+            - ratings_dataframe (pd.DataFrame): Ratings data with columns [userId, movieId, rating, timestamp]
+            
+    Raises:
+        FileNotFoundError: If the dataset files cannot be found in the expected location
+        pd.errors.EmptyDataError: If the CSV files are empty or corrupted
+    """
+    project_root, dataset_folder = get_project_paths()
+    
+    print(f"Loading datasets from: {dataset_folder}")
+    
+    # Construct file paths using os.path.join for cross-platform compatibility
+    movies_file_path = os.path.join(dataset_folder, 'movies.csv')
+    ratings_file_path = os.path.join(dataset_folder, 'ratings.csv')
+    
+    # Verify files exist before attempting to load
+    if not os.path.exists(movies_file_path):
+        raise FileNotFoundError(f"Movies dataset not found at: {movies_file_path}")
+    if not os.path.exists(ratings_file_path):
+        raise FileNotFoundError(f"Ratings dataset not found at: {ratings_file_path}")
+    
+    # Load datasets with explicit encoding for robustness
+    movies_dataframe = pd.read_csv(movies_file_path, encoding='utf-8')
+    ratings_dataframe = pd.read_csv(ratings_file_path, encoding='utf-8')
+    
+    print(f"Movies dataset loaded: {len(movies_dataframe):,} rows")
+    print(f"Ratings dataset loaded: {len(ratings_dataframe):,} rows")
+    
+    return movies_dataframe, ratings_dataframe
+
+
+def merge_and_clean_datasets(movies_df: pd.DataFrame, ratings_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge movies and ratings datasets and perform basic cleaning.
+    
+    This function combines the movies and ratings data into a single DataFrame
+    and removes columns that are not immediately needed for basic recommendation
+    algorithms (timestamp, genres).
+    
+    Args:
+        movies_df (pd.DataFrame): Movies dataset with movie metadata
+        ratings_df (pd.DataFrame): Ratings dataset with user preferences
+        
+    Returns:
+        pd.DataFrame: Merged and cleaned dataset with columns:
+            [userId, movieId, rating, title]
+    """
+    print("Merging datasets...")
+    
+    # Perform left join to preserve all ratings even if movie metadata is missing
+    merged_dataframe = pd.merge(
+        ratings_df, 
+        movies_df, 
+        on='movieId', 
+        how='left'
+    )
+    
+    # Remove columns not needed for basic collaborative filtering
+    columns_to_remove = ['timestamp', 'genres']
+    cleaned_dataframe = merged_dataframe.drop(columns=columns_to_remove, errors='ignore')
+    
+    # Check for missing movie titles (indicates data quality issues)
+    missing_titles_count = cleaned_dataframe['title'].isnull().sum()
+    if missing_titles_count > 0:
+        print(f"Warning: {missing_titles_count} ratings have missing movie titles")
+    
+    print(f"Data merge completed. Final dataset: {len(cleaned_dataframe):,} rows")
+    
+    return cleaned_dataframe
+
+
+def load_and_prepare_data() -> pd.DataFrame:
+    """
+    Complete data loading and preparation pipeline.
+    
+    This is the main entry point for data loading. It orchestrates the
+    loading of raw datasets, merging, and basic cleaning operations.
+    
+    Returns:
+        pd.DataFrame: Cleaned and merged dataset ready for analysis
+        
+    Raises:
+        FileNotFoundError: If dataset files are not found
+        Exception: For any other data loading or processing errors
+    """
+    try:
+        movies_dataframe, ratings_dataframe = load_movieLens_datasets()
+        final_dataframe = merge_and_clean_datasets(movies_dataframe, ratings_dataframe)
+        
+        print("Data preparation pipeline completed successfully")
+        return final_dataframe
+        
+    except Exception as error:
+        print(f"Error in data loading pipeline: {error}")
+        raise
+
+
+def main():
+    """
+    Main function for testing the data loading module in isolation.
+    
+    This function is executed only when the script is run directly,
+    not when imported as a module. It provides a way to test the
+    data loading functionality independently.
+    """
+    print("LatentLens Data Loader - Testing Mode")
+    print("=" * 50)
+    
+    try:
+        main_dataframe = load_and_prepare_data()
+        
+        print("\nDataset Overview:")
+        print(f"Shape: {main_dataframe.shape}")
+        print(f"Columns: {list(main_dataframe.columns)}")
+        print("\nSample data:")
+        print(main_dataframe.head())
+        
+        print("\nData types:")
+        print(main_dataframe.dtypes)
+        
+    except Exception as error:
+        print(f"Failed to load data: {error}")
+        sys.exit(1)
+
+
+# Execute main function only when script is run directly
 if __name__ == '__main__':
-    # Este código solo se ejecuta si corremos este script directamente desde la terminal.
-    # Es una buena práctica para asegurarnos de que la función funciona fuera del notebook.
-    
-    main_df = load_and_prepare_data()
-    
-    print("\nVista previa del DataFrame final:")
-    print(main_df.head())
+    main()
