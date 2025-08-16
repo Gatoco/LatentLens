@@ -20,11 +20,17 @@
 
 ## 🚦 Current Status & Context
 
-- **API**: FastAPI app with `/health` endpoint; recommendation endpoints in development.
-- **CI/CD**: GitHub Actions pipeline ✅ (Docker build + tests).
-- **Experiments**: MLflow tracking locally (`./mlruns/`); artifacts gitignored.
-- **Docker**: Multi-stage build optimized for production.
-- **Tests**: Passing locally and in CI using pytest.
+- **API**: Complete FastAPI app with 4 production endpoints ✅
+  - `GET /health` - Service health check
+  - `GET /recommend/{user_id}` - Personalized movie recommendations  
+  - `GET /movies/popular` - Popular movies baseline
+  - `GET /movies/similar` - Collaborative filtering recommendations
+- **CI/CD**: GitHub Actions pipeline ✅ (Docker build + 50 tests passing)
+- **Experiments**: MLflow tracking with 3 model types (Baseline, KNN, SVD)
+- **Docker**: Multi-stage build optimized for production
+- **Tests**: 50 comprehensive tests covering all components (100% passing)
+
+**Sprint Status:** ✅ **COMPLETED** - All Q1-M1 objectives achieved successfully.
 
 ---
 
@@ -117,9 +123,11 @@ graph TB
 #### 🔧 **API Layer (FastAPI)**
 - **Ubicación**: `src/main.py`
 - **Responsabilidad**: Endpoints REST, validación de requests, serialización JSON
-- **Endpoints actuales**:
+- **Endpoints implementados**:
   - `GET /health` - Health check para monitoring
-  - **Próximos**: `POST /recommend`, `GET /movies/{id}`
+  - `GET /recommend/{user_id}` - Recomendaciones personalizadas híbridas
+  - `GET /movies/popular` - Top películas por rating ponderado
+  - `GET /movies/similar` - Collaborative filtering con KNN
 
 #### 📊 **Data Processing Layer**
 - **Ubicación**: `src/data_loader.py`, `src/preprocessing.py`
@@ -193,8 +201,13 @@ python -m pytest -q   # optional: run tests
 
 # Run the API (dev)
 python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8000
-# Health check
-# http://127.0.0.1:8000/health
+
+# Test the endpoints
+# Health check: http://127.0.0.1:8000/health
+# User recommendations: http://127.0.0.1:8000/recommend/123?limit=5
+# Popular movies: http://127.0.0.1:8000/movies/popular?limit=10
+# Similar movies: http://127.0.0.1:8000/movies/similar?movie_title=Toy%20Story%20(1995)&limit=5
+# API docs: http://127.0.0.1:8000/docs
 ```
 
 ---
@@ -266,8 +279,9 @@ setup.py
 - [x] Docker multi-stage build (builder + slim)
 - [x] CI/CD pipeline with GitHub Actions
 - [x] Comprehensive documentation
-- [ ] REST endpoints for recommendations (`/recommend`, `/movies/{id}`)
+- [x] **REST endpoints for recommendations** (`/recommend/{user_id}`, `/movies/popular`, `/movies/similar`)
 - [ ] Model serving and caching layer
+- [ ] Real user personalization with rating history
 - [ ] Hyperparameter sweeps and model registry
 - [ ] Production deployment (AWS/GCP/Azure)
 - [ ] Monitoring and logging
