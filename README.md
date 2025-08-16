@@ -34,6 +34,10 @@ Requirements: Python 3.10, Git. On Windows PowerShell:
 python -m venv venv
 ./venv/Scripts/Activate.ps1
 pip install -r requirements.txt
+
+# IMPORTANT: Install package in editable mode (fixes import errors)
+pip install -e .
+
 python -m pytest -q   # optional: run tests
 
 # Run the API (dev)
