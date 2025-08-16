@@ -1,145 +1,126 @@
 
-# 🎬 LatentLens: Hybrid Movie Recommendation System
+# 🎬 LatentLens — Hybrid Movie Recommender
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Work%20In%20Progress-orange" alt="Status">
   <img src="https://img.shields.io/badge/Python-3.10-blue?logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/scikit--learn-%23F7931E.svg?logo=scikit-learn&logoColor=white" alt="Scikit-learn">
-  <img src="https://img.shields.io/badge/pandas-%23150458.svg?logo=pandas&logoColor=white" alt="Pandas">
-  <img src="https://img.shields.io/badge/FastAPI-0.116.1-green?logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/MLflow-3.2.0-blueviolet?logo=mlflow" alt="MLflow">
+  <img src="https://img.shields.io/badge/FastAPI-0.116.1-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/MLflow-3.2.0-9457EB?logo=mlflow&logoColor=white" alt="MLflow">
+  <img src="https://img.shields.io/badge/scikit--learn-1.3.2-F7931E?logo=scikit-learn&logoColor=white" alt="scikit-learn">
+  <img src="https://img.shields.io/badge/pandas-2.3.1-150458?logo=pandas&logoColor=white" alt="pandas">
   <img src="https://img.shields.io/badge/Surprise-1.1.4-yellow?logo=python" alt="Surprise">
----
-
-## 🧩 Main Frameworks & Dependencies
-
-- Python 3.10
-- [FastAPI](https://fastapi.tiangolo.com/) (0.116.1)
-- [scikit-learn](https://scikit-learn.org/) (1.3.2)
-- [pandas](https://pandas.pydata.org/) (2.3.1)
-- [scikit-surprise](https://surpriselib.com/) (1.1.4)
-- [MLflow](https://mlflow.org/) (3.2.0)
-- [Uvicorn](https://www.uvicorn.org/) (0.35.0)
-- [Jupyter](https://jupyter.org/) (for notebooks)
-
+  <img src="https://img.shields.io/badge/License-MIT-black" alt="License">
 </p>
 
-> **LatentLens** is a modern, scalable movie recommendation system that blends advanced data analysis and machine learning to deliver smart, personalized suggestions. Built for extensibility and production, LatentLens bridges the gap between simple popularity-based recommenders and sophisticated collaborative filtering models.
+> LatentLens blends popularity baselines with collaborative filtering (KNN, SVD) to deliver movie recommendations at scale. Built with a clean src-layout, MLflow tracking, and a FastAPI service layer.
 
 ---
 
-## 📚 Table of Contents
+## 🚦 Current Status & Context
 
-- [Overview](#overview)
-- [Features](#features)
-- [Dataset](#dataset)
-- [Methodology](#methodology)
-- [Demo](#demo)
-- [Project Structure](#project-structure)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
+- API: minimal FastAPI app exposed at `/health` for liveness checks; recommendation endpoints planned.
+- Experiments: MLflow runs stored locally under `./mlruns/` (ignored by git).
+- Docker: multi-stage build updated; builder includes `git` so pip can install git-based deps.
+- Tests: green locally via `pytest` (src-layout fixed with `src/__init__.py`).
+- Repo hygiene: history cleanup in progress to remove large MLflow artifacts previously committed before pushing to GitHub.
 
 ---
 
-## 📝 Overview
+## ⚡ Quickstart (Local)
 
-With thousands of movies available, users often struggle to find content that matches their tastes. LatentLens analyzes both user behavior and movie features to provide relevant, engaging recommendations—helping users discover films they’ll love.
+Requirements: Python 3.10, Git. On Windows PowerShell:
+
+```powershell
+python -m venv venv
+./venv/Scripts/Activate.ps1
+pip install -r requirements.txt
+python -m pytest -q   # optional: run tests
+
+# Run the API (dev)
+python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8000
+# Health check
+# http://127.0.0.1:8000/health
+```
 
 ---
 
-## 🚀 Features
+## � Docker
 
-- End-to-end recommendation pipeline
-- Baseline and collaborative filtering models (KNN, SVD)
-- Scalable data processing for large datasets (25M+ ratings)
-- Modular, extensible Python codebase
-- Ready for API deployment and experiment tracking (MLflow)
-- Jupyter notebooks for EDA and prototyping
+Multi-stage image (builder builds wheels; runtime uses slim). Build and run:
+
+```powershell
+docker build -t latentlens:local .
+docker run --rm -p 8000:8000 latentlens:local
+```
+
+Notes:
+- `mlruns/` and large artifacts are ignored; mount volumes if you want to persist runs.
+- The builder stage installs `git` to support git-based requirements during pip install.
+
+---
+
+## 🧩 Tech Stack
+
+- Python 3.10 • FastAPI • Uvicorn
+- scikit-learn • pandas • scikit-surprise (SVD, KNN)
+- MLflow for experiment tracking
+- Jupyter for exploration (see `notebooks/`)
 
 ---
 
 ## 📊 Dataset
 
-LatentLens leverages the [MovieLens 25M](https://grouplens.org/datasets/movielens/25m/) dataset:
+Uses [MovieLens 25M](https://grouplens.org/datasets/movielens/25m/).
 
-- **25 million ratings**
-- **162,000+ users**
-- **62,000+ movies**
+- Expected path (local): `./data/ml-25m/` with `ratings.csv`, `movies.csv`, etc.
+- Data and artifacts are ignored by git to keep the repo lean.
 
-**Key Insights:**
-- High data sparsity (many movies with few ratings)
-- Distinct rating patterns among "power users"
-- Genre and popularity analysis included
+Key characteristics: high sparsity, long-tail items, power users, genre overlap.
 
 ---
 
-## 🛠️ Methodology
+## 🛠️ Methods (Concise)
 
-### Baseline: Weighted Popularity
-
-Recommends top-rated movies, filtered by a minimum vote threshold to avoid bias toward niche titles.
-
-### Collaborative Filtering
-
-- **User-Item Matrix:** Sparse matrix of user ratings
-- **Memory Optimization:** Focus on most active users and popular movies
-- **Algorithms:**
-  - KNN (cosine similarity, brute-force)
-  - SVD (matrix factorization, Surprise library)
-- **Experiment Tracking:** MLflow for reproducibility and comparison
-
----
-
-## ✨ Demo
-
-**Sample Recommendations**
-
-> If you liked _The Godfather (1972)_:
-> - The Godfather: Part II (1974)
-> - Pulp Fiction (1994)
-> - Goodfellas (1990)
-> - The Silence of the Lambs (1991)
-> - The Shawshank Redemption (1994)
-
-> If you liked _Goodfellas (1990)_:
-> - The Godfather (1972)
-> - Pulp Fiction (1994)
-> - The Godfather: Part II (1974)
-> - Reservoir Dogs (1992)
-> - Fargo (1996)
+- Baseline: weighted popularity with minimum votes to reduce small-sample bias.
+- Collaborative filtering:
+  - User–item sparse matrix with activity/popularity filtering.
+  - KNN (cosine, brute force) and SVD (Surprise) with RMSE evaluation.
+- Tracking: MLflow metrics/params/artifacts for reproducibility.
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-/data         # MovieLens dataset (not included in repo)
-/notebooks    # Jupyter Notebooks for EDA and prototyping
-/src          # Modular Python source code
-setup.py      # Project installer
-requirements.txt # Dependencies
+data/            # MovieLens dataset (local only, gitignored)
+notebooks/       # EDA and MLflow experiments
+src/             # FastAPI app and utilities (src-layout)
+  ├─ main.py     # API app with /health
+  └─ ...
+requirements.txt
+setup.py
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] Baseline model implementation
-- [x] Collaborative Filtering (KNN, SVD)
-- [x] Model evaluation (RMSE)
-- [ ] REST API (FastAPI)
-- [x] MLflow integration
-- [ ] Dockerization
+- [x] Baseline model (popularity)
+- [x] Collaborative filtering (KNN, SVD) + RMSE
+- [x] MLflow local tracking
+- [x] Docker multi-stage build (builder + slim)
+- [ ] REST endpoints for recommendations
+- [ ] CI and publishing (after history cleanup)
+- [ ] Hyperparameter sweeps and model registry
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request to get started.
+PRs are welcome. Please avoid committing data or MLflow artifacts. For experiments, keep runs under local `mlruns/`.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License.

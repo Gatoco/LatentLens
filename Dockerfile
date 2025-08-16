@@ -10,7 +10,9 @@ WORKDIR /app
 
 # Actualizamos el sistema e instalamos las herramientas de construcción
 # como una buena práctica, por si algo más las necesitara.
-RUN apt-get update && apt-get install -y build-essential
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential git \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copiamos solo el manifiesto de dependencias
 COPY requirements.txt .
