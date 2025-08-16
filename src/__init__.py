@@ -35,6 +35,9 @@ __all__ = [
     "extract_movie_title_without_year",
     "normalize_movie_title",
     "app",
+    "get_recommendations_for_user",
+    "get_popular_movies",
+    "get_similar_movies",
 ]
 
 # Import main components for easier access
@@ -42,6 +45,11 @@ try:
     from .data_loader import load_and_prepare_data
     from .preprocessing import extract_movie_title_without_year, normalize_movie_title
     from .main import app
+    from .recommendation_service import (
+        get_recommendations_for_user, 
+        get_popular_movies, 
+        get_similar_movies
+    )
 except ImportError:
     # Handle cases where dependencies might not be available
     # This allows the package to be imported even if some modules fail
