@@ -1,0 +1,16 @@
+
+*** Ranking Metrics Report - SVD ***
+==================================================
+
+Metric               @5        @10       @20      
+--------------------------------------------------
+Precision            0.2640   0.1880   0.0960   
+Recall               0.5646   0.7394   0.7489   
+Avg Precision        0.4357   0.4873   0.4906   
+NDCG                 0.8743   0.9379   0.9407   
+
+*** Key Insights ***
+- Best Precision: 0.2640 @5
+- Best Recall: 0.7489 @20
+- Best Avg Precision: 0.4906 @20
+- Best NDCG: 0.9407 @20

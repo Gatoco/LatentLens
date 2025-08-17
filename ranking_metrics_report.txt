@@ -1,0 +1,16 @@
+
+*** Ranking Metrics Report - SVD_RecommendationModel_20250816_185937 ***
+==================================================
+
+Metric               @5        @10       @20      
+--------------------------------------------------
+Precision            0.0000   0.0000   0.0000   
+Recall               0.0000   0.0000   0.0000   
+Avg Precision        0.0000   0.0000   0.0000   
+NDCG                 0.0000   0.0000   0.0000   
+
+*** Key Insights ***
+- Best Precision: 0.0000 @5
+- Best Recall: 0.0000 @5
+- Best Avg Precision: 0.0000 @5
+- Best NDCG: 0.0000 @5

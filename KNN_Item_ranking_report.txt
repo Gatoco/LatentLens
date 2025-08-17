@@ -1,0 +1,16 @@
+
+*** Ranking Metrics Report - KNN_Item ***
+==================================================
+
+Metric               @5        @10       @20      
+--------------------------------------------------
+Precision            0.2480   0.1820   0.0950   
+Recall               0.5230   0.7249   0.7467   
+Avg Precision        0.3269   0.3845   0.3902   
+NDCG                 0.8359   0.9128   0.9172   
+
+*** Key Insights ***
+- Best Precision: 0.2480 @5
+- Best Recall: 0.7467 @20
+- Best Avg Precision: 0.3902 @20
+- Best NDCG: 0.9172 @20

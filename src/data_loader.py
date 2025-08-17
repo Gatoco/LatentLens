@@ -13,6 +13,90 @@ import os
 import sys
 from typing import Tuple, Optional
 import pandas as pd
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class DataLoader:
+    """
+    Class to handle loading and preprocessing of MovieLens 25M dataset.
+    """
+    
+    def __init__(self, data_path: Optional[str] = None):
+        """
+        Initialize DataLoader with dataset path.
+        
+        Args:
+            data_path (Optional[str]): Path to the dataset folder. If None, 
+                                     will auto-detect from project structure.
+        """
+        if data_path is None:
+            self.project_root, self.data_path = get_project_paths()
+        else:
+            self.data_path = data_path
+            self.project_root = os.path.dirname(self.data_path)
+        
+        logger.info(f"DataLoader initialized with data path: {self.data_path}")
+    
+    def load_ratings(self) -> pd.DataFrame:
+        """
+        Load the ratings dataset.
+        
+        Returns:
+            pd.DataFrame: Ratings dataframe with columns ['userId', 'movieId', 'rating', 'timestamp']
+        """
+        ratings_path = os.path.join(self.data_path, 'ratings.csv')
+        
+        if not os.path.exists(ratings_path):
+            raise FileNotFoundError(f"Ratings file not found at: {ratings_path}")
+        
+        logger.info(f"Loading ratings from: {ratings_path}")
+        ratings_df = pd.read_csv(ratings_path)
+        
+        logger.info(f"Loaded {len(ratings_df)} ratings for {ratings_df['userId'].nunique()} users and {ratings_df['movieId'].nunique()} movies")
+        
+        return ratings_df
+    
+    def load_movies(self) -> pd.DataFrame:
+        """
+        Load the movies dataset.
+        
+        Returns:
+            pd.DataFrame: Movies dataframe with columns ['movieId', 'title', 'genres']
+        """
+        movies_path = os.path.join(self.data_path, 'movies.csv')
+        
+        if not os.path.exists(movies_path):
+            raise FileNotFoundError(f"Movies file not found at: {movies_path}")
+        
+        logger.info(f"Loading movies from: {movies_path}")
+        movies_df = pd.read_csv(movies_path)
+        
+        logger.info(f"Loaded {len(movies_df)} movies")
+        
+        return movies_df
+    
+    def load_tags(self) -> pd.DataFrame:
+        """
+        Load the tags dataset.
+        
+        Returns:
+            pd.DataFrame: Tags dataframe with columns ['userId', 'movieId', 'tag', 'timestamp']
+        """
+        tags_path = os.path.join(self.data_path, 'tags.csv')
+        
+        if not os.path.exists(tags_path):
+            raise FileNotFoundError(f"Tags file not found at: {tags_path}")
+        
+        logger.info(f"Loading tags from: {tags_path}")
+        tags_df = pd.read_csv(tags_path)
+        
+        logger.info(f"Loaded {len(tags_df)} tags")
+        
+        return tags_df
 
 
 # Path configuration with cross-platform compatibility
