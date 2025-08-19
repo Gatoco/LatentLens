@@ -160,11 +160,11 @@ class HybridRecommendationService:
             List[Dict[str, Any]]: List of candidate recommendations with scores.
         """
         try:
-            # Get recommendations from the collaborative service
-            # Note: The current service returns popular movies as fallback
-            # In a full implementation, this would use SVD predictions
-            recommendations = self.collaborative_service.get_user_recommendations(
-                user_id, n_candidates, "collaborative"
+            # Use the new SVD recommendations from MLflow
+            recommendations = self.collaborative_service.get_svd_recommendations(
+                user_id=user_id, 
+                n_recommendations=n_candidates,
+                exclude_seen=True
             )
             
             # Format for hybrid system
@@ -173,11 +173,11 @@ class HybridRecommendationService:
                 candidates.append({
                     'movieId': rec.get('movieId', 0),
                     'title': rec.get('title', ''),
-                    'score': rec.get('average_rating', 3.5),  # Use average rating as proxy score
-                    'source': 'collaborative',
+                    'score': rec.get('predicted_rating', 3.5),  # Use SVD predicted rating
+                    'source': 'collaborative_svd',
                     'genres': rec.get('genres', ''),
-                    'avg_rating': rec.get('average_rating', 0.0),
-                    'num_ratings': rec.get('num_ratings', 0)
+                    'predicted_rating': rec.get('predicted_rating', 3.5),
+                    'recommendation_type': rec.get('recommendation_type', 'svd')
                 })
             
             return candidates

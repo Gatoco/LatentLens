@@ -3,7 +3,7 @@ Recommendation Service Module for LatentLens
 
 This module provides functions to load trained models and generate movie
 recommendations using both popularity baseline and collaborative filtering
-approaches.
+approaches with MLflow integration.
 
 Author: LatentLens Team
 License: MIT
@@ -18,11 +18,16 @@ from pathlib import Path
 import joblib
 from sklearn.neighbors import NearestNeighbors
 from scipy.sparse import csr_matrix
+import logging
 
 try:
     from .data_loader import load_and_prepare_data
+    from .mlflow_svd_service import MLflowSVDService
 except ImportError:
     from data_loader import load_and_prepare_data
+    from mlflow_svd_service import MLflowSVDService
+
+logger = logging.getLogger(__name__)
 
 
 class RecommendationService:
@@ -41,6 +46,7 @@ class RecommendationService:
         self.knn_model: Optional[NearestNeighbors] = None
         self.movie_user_matrix: Optional[pd.DataFrame] = None
         self.movie_user_matrix_sparse: Optional[csr_matrix] = None
+        self.mlflow_svd_service: Optional[MLflowSVDService] = None
         self._is_initialized = False
     
     def initialize(self) -> None:
@@ -66,6 +72,9 @@ class RecommendationService:
         
         # Prepare collaborative filtering model
         self._prepare_collaborative_filtering()
+        
+        # Initialize MLflow SVD service
+        self._initialize_mlflow_svd()
         
         self._is_initialized = True
         print("Recommendation service initialized successfully.")
@@ -127,7 +136,177 @@ class RecommendationService:
         self.knn_model = NearestNeighbors(metric='cosine', algorithm='brute')
         self.knn_model.fit(self.movie_user_matrix_sparse)
         
-        print(f"Collaborative filtering prepared with {len(filtered_df)} interactions")
+        interactions = len(filtered_df)
+        print(f"Collaborative filtering prepared with {interactions:,} interactions")
+    
+    def _initialize_mlflow_svd(self) -> None:
+        """
+        Initialize MLflow SVD service and try to load existing model.
+        If no model exists, train a new one.
+        """
+        logger.info("Initializing MLflow SVD service...")
+        
+        try:
+            # Initialize MLflow SVD service
+            self.mlflow_svd_service = MLflowSVDService()
+            
+            # Try to load existing model
+            model_loaded = self.mlflow_svd_service.load_latest_model()
+            
+            if model_loaded:
+                logger.info("✅ Successfully loaded SVD model from MLflow")
+            else:
+                logger.info("No existing SVD model found. Training new model...")
+                self._train_and_save_svd_model()
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize MLflow SVD service: {e}")
+            self.mlflow_svd_service = None
+    
+    def _train_and_save_svd_model(self) -> None:
+        """Train and save a new SVD model to MLflow"""
+        if not hasattr(self, 'data_df') or self.data_df is None:
+            logger.error("No data available for SVD training")
+            return
+        
+        try:
+            # Prepare ratings DataFrame for Surprise
+            ratings_df = self.data_df[['userId', 'movieId', 'rating']].copy()
+            
+            # Sample data if too large (for faster training)
+            if len(ratings_df) > 1000000:  # 1M ratings
+                logger.info("Sampling data for SVD training...")
+                ratings_df = ratings_df.sample(n=1000000, random_state=42)
+            
+            # Train and save model
+            model_uri = self.mlflow_svd_service.train_and_save_model(
+                ratings_df=ratings_df,
+                n_factors=100,
+                n_epochs=20,
+                lr_all=0.005,
+                reg_all=0.02
+            )
+            
+            logger.info(f"✅ SVD model trained and saved to MLflow: {model_uri}")
+            
+        except Exception as e:
+            logger.error(f"Failed to train SVD model: {e}")
+            self.mlflow_svd_service = None
+    
+    def get_svd_recommendations(
+        self, 
+        user_id: int, 
+        n_recommendations: int = 10,
+        exclude_seen: bool = True
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recommendations using MLflow-loaded SVD model
+        
+        Args:
+            user_id: User ID to get recommendations for
+            n_recommendations: Number of recommendations to return
+            exclude_seen: Whether to exclude movies user has already rated
+            
+        Returns:
+            List of movie recommendations with predicted ratings
+        """
+        if not self.mlflow_svd_service or not self.mlflow_svd_service.is_model_loaded():
+            logger.warning("SVD model not available, falling back to popular recommendations")
+            return self.get_popular_recommendations(n_recommendations)
+        
+        try:
+            # Get all movie IDs as candidates
+            all_movies = self.data_df['movieId'].unique()
+            
+            # Exclude movies user has already rated if requested
+            if exclude_seen:
+                user_movies = set(self.data_df[self.data_df['userId'] == user_id]['movieId'])
+                candidate_movies = [m for m in all_movies if m not in user_movies]
+            else:
+                candidate_movies = all_movies
+            
+            # Limit candidates for performance
+            if len(candidate_movies) > 5000:
+                candidate_movies = np.random.choice(candidate_movies, 5000, replace=False)
+            
+            # Get predictions from SVD model
+            recommendations = self.mlflow_svd_service.get_user_recommendations(
+                user_id=user_id,
+                movie_ids=candidate_movies,
+                n_recommendations=n_recommendations
+            )
+            
+            # Convert to our format with movie metadata
+            result = []
+            for movie_id, predicted_rating in recommendations:
+                movie_info = self.data_df[self.data_df['movieId'] == movie_id].iloc[0]
+                
+                result.append({
+                    'movieId': int(movie_id),
+                    'title': movie_info['title'],
+                    'genres': movie_info.get('genres', 'Unknown'),
+                    'predicted_rating': float(predicted_rating),
+                    'recommendation_type': 'svd_collaborative'
+                })
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error generating SVD recommendations for user {user_id}: {e}")
+            return self.get_popular_recommendations(n_recommendations)
+    
+    def get_collaborative_recommendations(
+        self, 
+        movie_title: str, 
+        num_recommendations: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recommendations using KNN collaborative filtering (item-to-item similarity).
+        This method has been updated to work with the new SVD implementation.
+        """
+        logger.info(f"Getting collaborative recommendations for: {movie_title}")
+        
+        # For user-based recommendations, redirect to SVD
+        if isinstance(movie_title, (int, float)):
+            logger.info("Redirecting to SVD recommendations for user-based query")
+            return self.get_svd_recommendations(int(movie_title), num_recommendations)
+        
+        # Continue with original KNN implementation for item-to-item similarity
+        if not self._is_initialized:
+            raise ValueError("Service not initialized. Call initialize() first.")
+        
+        if self.knn_model is None:
+            raise ValueError("KNN model not available")
+        
+        try:
+            # Find movie index
+            movie_index = list(self.movie_user_matrix.index).index(movie_title)
+            
+        except ValueError:
+            raise ValueError(f"Movie '{movie_title}' not found in the recommendation dataset")
+        
+        # Get movie vector and find similar movies
+        movie_vector = self.movie_user_matrix_sparse[movie_index].reshape(1, -1)
+        distances, indices = self.knn_model.kneighbors(
+            movie_vector, 
+            n_neighbors=num_recommendations + 1
+        )
+        
+        # Prepare recommendations (exclude the input movie itself)
+        recommendations = []
+        similar_movies = list(zip(indices.flatten()[1:], distances.flatten()[1:]))
+        
+        for idx, distance in similar_movies:
+            similar_movie_title = self.movie_user_matrix.index[idx]
+            similarity_score = 1 - distance  # Convert distance to similarity
+            
+            recommendations.append({
+                'title': similar_movie_title,
+                'similarity_score': similarity_score,
+                'recommendation_type': 'collaborative_knn'
+            })
+        
+        return recommendations
     
     def get_popular_recommendations(
         self, 
