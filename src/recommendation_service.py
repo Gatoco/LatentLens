@@ -19,7 +19,10 @@ import joblib
 from sklearn.neighbors import NearestNeighbors
 from scipy.sparse import csr_matrix
 
-from .data_loader import load_and_prepare_data
+try:
+    from .data_loader import load_and_prepare_data
+except ImportError:
+    from data_loader import load_and_prepare_data
 
 
 class RecommendationService:

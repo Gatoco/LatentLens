@@ -152,11 +152,10 @@ class ContentBasedModel:
         logger.info(f"TF-IDF matrix shape: {self.tfidf_matrix.shape}")
         logger.info(f"Vocabulary size: {len(self.tfidf_vectorizer.vocabulary_)}")
         
-        # Compute cosine similarity matrix
-        logger.info("Computing cosine similarity matrix...")
-        self.cosine_sim_matrix = cosine_similarity(self.tfidf_matrix)
-        
-        logger.info(f"Cosine similarity matrix shape: {self.cosine_sim_matrix.shape}")
+        # Don't compute full cosine similarity matrix (too much memory)
+        # Instead, compute similarities on-demand when needed
+        logger.info("Content-based model ready (similarity computed on-demand)")
+        self.cosine_sim_matrix = None  # Will compute on-demand
         
         self.is_fitted = True
         logger.info("Content-based model fitted successfully")
@@ -189,18 +188,21 @@ class ContentBasedModel:
         # Get movie index
         movie_idx = self.movie_indices[movie_id]
         
-        # Get similarity scores for this movie
-        sim_scores = list(enumerate(self.cosine_sim_matrix[movie_idx]))
+        # Compute similarity scores on-demand for this specific movie
+        movie_vector = self.tfidf_matrix[movie_idx:movie_idx+1]  # Keep as 2D array
+        sim_scores = cosine_similarity(movie_vector, self.tfidf_matrix).flatten()
         
-        # Sort by similarity score (descending)
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        # Get indices sorted by similarity score (descending)
+        # Exclude the movie itself (index movie_idx)
+        similar_indices = np.argsort(sim_scores)[::-1]
+        similar_indices = similar_indices[similar_indices != movie_idx]
         
-        # Get top N similar movies (excluding the movie itself)
-        similar_movies = sim_scores[1:n_recommendations + 1]
+        # Get top N similar movies
+        top_indices = similar_indices[:n_recommendations]
         
         # Prepare recommendations
         recommendations = []
-        for idx, score in similar_movies:
+        for idx in top_indices:
             movie_data = {
                 'movieId': self.movies_df.iloc[idx]['movieId'],
                 'title': self.movies_df.iloc[idx]['title'],
@@ -208,7 +210,7 @@ class ContentBasedModel:
             }
             
             if include_scores:
-                movie_data['similarity_score'] = score
+                movie_data['similarity_score'] = float(sim_scores[idx])
                 
             recommendations.append(movie_data)
         
