@@ -131,34 +131,65 @@ async def system_status():
     return status
 
 # Hybrid recommendation endpoint
-@app.get("/recommend/hybrid/{user_id}")
+@app.get("/recommend/hybrid/{user_id}", tags=["Recomendaciones"])
 async def get_hybrid_recommendations(
     user_id: int,
-    n_recommendations: int = 10
+    top_n: int = 10
 ):
     """
     Get hybrid recommendations for a user
     
     Combines collaborative filtering, item-to-item similarity, and content-based filtering
+    
+    Args:
+        user_id (int): User ID to get recommendations for
+        top_n (int): Number of recommendations to return (default: 10)
+        
+    Returns:
+        Dict containing hybrid recommendations and metadata
     """
-    global hybrid_service
+    global hybrid_service, recommendation_service
     
     if hybrid_service is None:
         raise HTTPException(status_code=503, detail="Hybrid service not available")
     
+    if recommendation_service is None:
+        raise HTTPException(status_code=503, detail="Recommendation service not available")
+    
     try:
-        # Get recommendations
-        recommendations = hybrid_service.get_hybrid_recommendations(
-            user_id=user_id,
-            n_recommendations=n_recommendations
+        # Step 1: Generate SVD Collaborative Filtering Candidates (20 movies)
+        logger.info(f"Generating SVD candidates for user {user_id}")
+        
+        # Reuse existing SVD logic from collaborative endpoint
+        svd_recommendations = recommendation_service.get_svd_recommendations(
+            user_id=user_id, 
+            n_recommendations=20,  # Generate 20 candidates as specified
+            exclude_seen=True
         )
         
+        # Extract movieId list from SVD predictions
+        svd_movie_candidates = [rec['movieId'] for rec in svd_recommendations]
+        
+        logger.info(f"Generated {len(svd_movie_candidates)} SVD candidates: {svd_movie_candidates[:5]}...")
+        
+        # For now, return SVD candidates for validation
+        # (This will be extended with additional filtering steps)
         return {
             "user_id": user_id,
-            "recommendations": recommendations,
-            "algorithm": "hybrid_recommendation_system",
-            "total_recommendations": len(recommendations)
+            "top_n": top_n,
+            "step": "svd_candidates_generation",
+            "svd_candidates": {
+                "movie_ids": svd_movie_candidates,
+                "count": len(svd_movie_candidates),
+                "details": svd_recommendations[:5]  # Show first 5 for verification
+            },
+            "algorithm": "hybrid_recommendation_system_step1",
+            "status": "svd_candidates_generated"
         }
+        
+    except Exception as e:
+        logger.error(f"Error generating hybrid recommendations for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
         
     except Exception as e:
         logger.error(f"Error generating hybrid recommendations for user {user_id}: {e}")
