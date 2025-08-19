@@ -172,19 +172,65 @@ async def get_hybrid_recommendations(
         
         logger.info(f"Generated {len(svd_movie_candidates)} SVD candidates: {svd_movie_candidates[:5]}...")
         
-        # For now, return SVD candidates for validation
-        # (This will be extended with additional filtering steps)
+        # Step 2: Generate Item-to-Item Similarity Candidates (KNN)
+        logger.info(f"Generating KNN similarity candidates for user {user_id}")
+        
+        # Step 2a: Get User's Positive Rating History (ratings > 4.0)
+        user_ratings = data_loader.ratings[data_loader.ratings['userId'] == user_id]
+        positive_ratings = user_ratings[user_ratings['rating'] > 4.0]
+        positive_movie_ids = positive_ratings['movieId'].tolist()
+        
+        logger.info(f"Found {len(positive_movie_ids)} positive movies for user {user_id}")
+        
+        # Step 2b: Get Similar Movies for each positive movie (5 similar movies per positive movie)
+        all_similar_movies = set()
+        
+        for movie_id in positive_movie_ids[:10]:  # Limit to first 10 to avoid too many API calls
+            try:
+                # Get movie title for the KNN method that expects movie title
+                movie_info = data_loader.movies[data_loader.movies['movieId'] == movie_id]
+                if not movie_info.empty:
+                    movie_title = movie_info.iloc[0]['title']
+                    
+                    # Get 5 similar movies using KNN
+                    similar_movies = recommendation_service.get_collaborative_recommendations(
+                        movie_title=movie_title,
+                        num_recommendations=5
+                    )
+                    
+                    # Extract movieIds from similar movies (need to convert title back to movieId)
+                    for sim_movie in similar_movies:
+                        sim_title = sim_movie['title']
+                        sim_movie_info = data_loader.movies[data_loader.movies['title'] == sim_title]
+                        if not sim_movie_info.empty:
+                            all_similar_movies.add(sim_movie_info.iloc[0]['movieId'])
+                            
+            except Exception as e:
+                logger.warning(f"Could not get similar movies for movie_id {movie_id}: {e}")
+                continue
+        
+        # Step 2c: Convert set to list and remove duplicates
+        knn_movie_candidates = list(all_similar_movies)
+        
+        logger.info(f"Generated {len(knn_movie_candidates)} KNN candidates: {knn_movie_candidates[:5]}...")
+        
+        # Return both sets of candidates for validation
         return {
             "user_id": user_id,
             "top_n": top_n,
-            "step": "svd_candidates_generation",
+            "step": "knn_candidates_generation",
             "svd_candidates": {
                 "movie_ids": svd_movie_candidates,
-                "count": len(svd_movie_candidates),
-                "details": svd_recommendations[:5]  # Show first 5 for verification
+                "count": len(svd_movie_candidates)
             },
-            "algorithm": "hybrid_recommendation_system_step1",
-            "status": "svd_candidates_generated"
+            "knn_candidates": {
+                "movie_ids": knn_movie_candidates,
+                "count": len(knn_movie_candidates),
+                "user_positive_movies": len(positive_movie_ids),
+                "processed_movies": min(10, len(positive_movie_ids))
+            },
+            "algorithm": "hybrid_recommendation_system_step2",
+            "status": "knn_candidates_generated"
         }
         
     except Exception as e:
