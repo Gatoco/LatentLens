@@ -4,7 +4,8 @@ LatentLens FastAPI Application
 
 This module defines the main FastAPI application for the LatentLens movie 
 recommendation system. It provides REST API endpoints for health checks 
-and movie recommendations using collaborative filtering and popularity baselines.
+and movie recommendations using a unified Recommender class that encapsulates
+all recommendation strategies.
 
 Author: LatentLens Team
 License: MIT
@@ -14,15 +15,15 @@ from fastapi import FastAPI, HTTPException, Path, Query
 from typing import List, Dict, Any
 import logging
 
-from .recommendation_service import get_recommendations_for_user, get_popular_movies, get_similar_movies
-from .item_similarity_service import get_similar_items_by_id, get_movie_information, get_model_status
-from .hybrid_recommendation_service import get_hybrid_recommendations_for_user, get_hybrid_system_status, hybrid_service
+from .recommender import get_recommender
+from .hybrid_recommendation_service import get_hybrid_system_status
+from .recommendation_service import get_similar_movies
 
 # Application instance with comprehensive metadata for API documentation
 application_instance = FastAPI(
     title="LatentLens Movie Recommendation API",
-    description="A hybrid recommendation system for movies using collaborative filtering and popularity baselines.",
-    version="0.1.0",
+    description="A unified recommendation system for movies using multiple strategies through a clean Recommender interface.",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -31,27 +32,28 @@ application_instance = FastAPI(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Global recommender instance
+recommender = get_recommender()
+
 
 @application_instance.on_event("startup")
 async def startup_event():
     """
     Initialize all recommendation models on application startup.
     
-    This event handler loads and initializes all the recommendation components:
-    - Collaborative filtering (SVD) model from MLflow
-    - Item-to-item similarity (KNN) model
-    - Content-based filtering model
-    - Hybrid recommendation service
+    This event handler initializes the unified Recommender class which
+    encapsulates all recommendation strategies and models.
     """
-    logger.info("🚀 Starting LatentLens API - Initializing recommendation models...")
+    logger.info("🚀 Starting LatentLens API - Initializing unified recommendation engine...")
     
     try:
-        # Initialize the hybrid service (this will initialize all component services)
-        logger.info("Initializing hybrid recommendation service...")
-        hybrid_service.initialize()
+        # Initialize the unified recommender (this will initialize all strategies)
+        logger.info("Initializing unified Recommender class...")
+        global recommender
+        recommender = get_recommender()
         
         logger.info("✅ All recommendation models loaded successfully!")
-        logger.info("🎬 LatentLens API is ready to serve hybrid recommendations!")
+        logger.info("🎬 LatentLens API is ready to serve unified recommendations!")
         
     except Exception as e:
         logger.error(f"❌ Error during model initialization: {str(e)}")
@@ -122,20 +124,17 @@ def get_user_recommendations(
         }
     """
     try:
-        logger.info(f"Generating recommendations for user {user_id}")
+        logger.info(f"Generating collaborative filtering recommendations for user {user_id}")
         
-        # Generate recommendations using the recommendation service
-        recommendations = get_recommendations_for_user(user_id, limit)
+        # Use unified recommender with collaborative filtering strategy
+        result = recommender.get_recommendations(
+            user_id=user_id,
+            strategy='collaborative',
+            n_recommendations=limit
+        )
         
-        response = {
-            "user_id": user_id,
-            "recommendations": recommendations,
-            "total_recommendations": len(recommendations),
-            "recommendation_type": "hybrid_popularity_baseline"
-        }
-        
-        logger.info(f"Successfully generated {len(recommendations)} recommendations for user {user_id}")
-        return response
+        logger.info(f"Successfully generated {result['n_recommendations']} recommendations for user {user_id}")
+        return result
         
     except Exception as error:
         logger.error(f"Error generating recommendations for user {user_id}: {str(error)}")
@@ -172,16 +171,11 @@ def get_popular_movie_recommendations(
     try:
         logger.info(f"Fetching {limit} popular movies")
         
-        popular_movies = get_popular_movies(limit)
+        # Use unified recommender with popularity strategy
+        result = recommender.get_popular_movies(n_recommendations=limit)
         
-        response = {
-            "movies": popular_movies,
-            "total_movies": len(popular_movies),
-            "recommendation_type": "popularity_baseline"
-        }
-        
-        logger.info(f"Successfully fetched {len(popular_movies)} popular movies")
-        return response
+        logger.info(f"Successfully fetched {result['n_recommendations']} popular movies")
+        return result
         
     except Exception as error:
         logger.error(f"Error fetching popular movies: {str(error)}")
@@ -248,27 +242,24 @@ def get_hybrid_user_recommendations(
     try:
         logger.info(f"Generating hybrid recommendations for user {user_id}")
         
-        # Generate hybrid recommendations
-        recommendations = get_hybrid_recommendations_for_user(user_id, limit)
+        # Use unified recommender with hybrid strategy (includes automatic cold start handling)
+        result = recommender.get_recommendations(
+            user_id=user_id,
+            strategy='hybrid',
+            n_recommendations=limit
+        )
         
-        # Get hybrid system status for metadata
+        # Add hybrid system status for metadata
         hybrid_status = get_hybrid_system_status()
-        
-        response = {
-            "user_id": user_id,
-            "recommendations": recommendations,
-            "total_recommendations": len(recommendations),
-            "recommendation_type": "hybrid_weighted_reranking",
-            "hybrid_info": {
-                "sources_used": ["collaborative", "item_similarity", "content_based"],
-                "weights": hybrid_status.get("weights", {}),
-                "diversity_weight": hybrid_status.get("diversity_weight", 0),
-                "popularity_weight": hybrid_status.get("popularity_weight", 0)
-            }
+        result['hybrid_info'] = {
+            "sources_used": ["collaborative", "item_similarity", "content_based"],
+            "weights": hybrid_status.get("weights", {}),
+            "diversity_weight": hybrid_status.get("diversity_weight", 0),
+            "popularity_weight": hybrid_status.get("popularity_weight", 0)
         }
         
-        logger.info(f"Successfully generated {len(recommendations)} hybrid recommendations for user {user_id}")
-        return response
+        logger.info(f"Successfully generated {result['n_recommendations']} hybrid recommendations for user {user_id}")
+        return result
         
     except Exception as error:
         logger.error(f"Error generating hybrid recommendations for user {user_id}: {str(error)}")
@@ -308,15 +299,13 @@ def get_system_status() -> Dict[str, Any]:
     try:
         logger.info("Retrieving comprehensive system status")
         
-        # Get status from all services
-        hybrid_status = get_hybrid_system_status()
-        similarity_status = get_model_status()
+        # Get unified system status from recommender
+        system_status = recommender.get_system_status()
         
         response = {
-            "hybrid_system": hybrid_status,
-            "item_similarity": similarity_status,
-            "api_version": "0.1.0",
-            "status": "operational" if hybrid_status.get("initialized", False) else "initializing"
+            "api_version": "1.0.0",
+            "status": "operational" if system_status.get("recommender_status") == "healthy" else "initializing",
+            "unified_recommender": system_status
         }
         
         logger.info("Successfully retrieved system status")
@@ -383,21 +372,15 @@ def get_item_to_item_similar_movies(
     try:
         logger.info(f"Finding movies similar to movie ID {movie_id}")
         
-        # Get information about the queried movie
-        query_movie = get_movie_information(movie_id)
+        # Use unified recommender for movie-to-movie recommendations
+        result = recommender.get_movie_recommendations(
+            movie_id=movie_id,
+            n_recommendations=limit,
+            strategy='item_similarity'
+        )
         
-        # Get similar movies using item-to-item KNN
-        similar_movies = get_similar_items_by_id(movie_id, limit)
-        
-        response = {
-            "query_movie": query_movie,
-            "similar_movies": similar_movies,
-            "total_movies": len(similar_movies),
-            "recommendation_type": "item_to_item_knn"
-        }
-        
-        logger.info(f"Successfully found {len(similar_movies)} movies similar to movie ID {movie_id}")
-        return response
+        logger.info(f"Successfully found {result['n_recommendations']} movies similar to movie ID {movie_id}")
+        return result
         
     except ValueError as ve:
         logger.warning(f"Movie ID not found: {movie_id}")
@@ -436,12 +419,17 @@ def get_similarity_model_status() -> Dict[str, Any]:
         }
     """
     try:
-        logger.info("Retrieving similarity model status")
+        logger.info("Retrieving unified model status")
         
-        model_status = get_model_status()
+        # Get comprehensive status from unified recommender
+        model_status = recommender.get_system_status()
         
         logger.info("Successfully retrieved model status")
-        return model_status
+        return {
+            "model_status": "operational",
+            "unified_recommender": model_status,
+            "available_strategies": model_status.get("available_strategies", [])
+        }
         
     except Exception as error:
         logger.error(f"Error retrieving model status: {str(error)}")
@@ -502,6 +490,92 @@ def get_similar_movie_recommendations(
             status_code=500,
             detail=f"Failed to find similar movies: {str(error)}"
         )
+
+
+# Cold Start Endpoints using Unified Recommender
+@application_instance.get("/recommend/cold-start/{user_id}")
+def get_cold_start_recommendations(
+    user_id: int = Path(..., description="User ID for cold start recommendations"),
+    strategy: str = Query("popular", description="Cold start strategy: popular, trending, or diverse"),
+    n_recommendations: int = Query(10, ge=1, le=50, description="Number of recommendations")
+):
+    """
+    Get cold start recommendations for new users or users with insufficient data.
+    
+    This endpoint provides recommendations for users who are new to the system
+    or have insufficient rating history using various cold start strategies.
+    """
+    try:
+        logger.info(f"Generating cold start recommendations for user {user_id} with strategy {strategy}")
+        
+        # Use unified recommender with cold start strategy
+        result = recommender.get_recommendations(
+            user_id=user_id,
+            strategy='cold_start',
+            n_recommendations=n_recommendations,
+            cold_start_strategy=strategy
+        )
+        
+        logger.info(f"Successfully generated {result['n_recommendations']} cold start recommendations")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating cold start recommendations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating cold start recommendations: {str(e)}")
+
+
+@application_instance.get("/movies/new")
+def get_new_movies(
+    years_back: int = Query(5, ge=1, le=20, description="How many years back to look for new movies"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of movies to return")
+):
+    """
+    Get recent/new movies for discovery and cold start scenarios.
+    
+    This endpoint returns movies from recent years that can be recommended
+    to new users or for movie discovery purposes.
+    """
+    try:
+        logger.info(f"Getting new movies from last {years_back} years")
+        
+        # Use unified recommender to get new movies
+        result = recommender.get_new_movies(years_back=years_back, limit=limit)
+        
+        logger.info(f"Successfully retrieved {result['n_movies']} new movies")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error getting new movies: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting new movies: {str(e)}")
+
+
+@application_instance.get("/recommend/for-new-movie/{movie_id}")
+def get_recommendations_for_new_movie(
+    movie_id: int = Path(..., description="Movie ID for content-based recommendations"),
+    n_recommendations: int = Query(10, ge=1, le=50, description="Number of recommendations")
+):
+    """
+    Get content-based recommendations for new movies with limited rating data.
+    
+    This endpoint provides recommendations for movies that are new to the system
+    and have insufficient collaborative filtering data.
+    """
+    try:
+        logger.info(f"Generating recommendations for new movie {movie_id}")
+        
+        # Use unified recommender for movie-to-movie recommendations
+        result = recommender.get_movie_recommendations(
+            movie_id=movie_id,
+            n_recommendations=n_recommendations,
+            strategy='item_similarity'
+        )
+        
+        logger.info(f"Successfully generated {result['n_recommendations']} recommendations for new movie")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating recommendations for new movie: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating recommendations for new movie: {str(e)}")
 
 
 # Export the app instance for uvicorn and other ASGI servers
