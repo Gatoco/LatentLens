@@ -1,0 +1,66 @@
+🎯 COMPREHENSIVE HYBRID MODEL ANALYSIS REPORT
+=================================================================
+
+📋 EXECUTIVE SUMMARY
+-------------------------
+⚠️  RESULT: MIXED PERFORMANCE - FURTHER OPTIMIZATION NEEDED
+   Overall Advantage: 0.0%
+
+📊 DETAILED METRICS COMPARISON
+-----------------------------------
+
+Success Rate:
+  Hybrid         : 100.0%
+  Collaborative  : 100.0%
+  Popularity     : 100.0%
+
+Diversity:
+  Hybrid         : 1.000
+  Collaborative  : 0.000
+  Popularity     : 0.000
+
+Avg Score:
+  Hybrid         : 3.500
+  Collaborative  : 3.500
+  Popularity     : 3.500
+
+Coverage:
+  Hybrid         : 52 movies
+  Collaborative  : 0 movies
+  Popularity     : 0 movies
+
+
+🚀 HYBRID MODEL ADVANTAGES
+------------------------------
+
+Success Rate:
+  vs Collaborative: +0.0%
+  vs Popularity:    +0.0%
+
+Diversity:
+  vs Collaborative: +0.0%
+  vs Popularity:    +0.0%
+
+Coverage:
+  vs Collaborative: +0.0%
+  vs Popularity:    +0.0%
+
+Score Quality:
+  vs Collaborative: +0.0%
+  vs Popularity:    +0.0%
+
+
+💡 RECOMMENDATIONS
+--------------------
+⚠️  Optimize hybrid model weights
+⚠️  Consider additional strategies
+⚠️  Evaluate on larger test set
+
+
+🔧 TECHNICAL DETAILS
+--------------------
+Test Users: 6
+Recommendations per User: 10-20
+Strategies Evaluated: 3
+Metrics Calculated: 8
+Evaluation Date: 2025-08-20 00:55:26
