@@ -36,9 +36,10 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Ahora copiamos nuestro código fuente, tests y configuración.
+# Ahora copiamos nuestro código fuente, tests, datos y configuración.
 COPY ./src /app/src
 COPY ./tests /app/tests
+COPY ./data /app/data
 COPY setup.py /app/
 
 # Instalamos el paquete en modo editable para que pytest funcione

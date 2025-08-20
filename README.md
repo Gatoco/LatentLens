@@ -1,6 +1,19 @@
 
 ```
-    ██╗      █████╗ ████████╗███████╗███╗   ██╗████████╗██╗     ███████╗███╗   ██╗███████╗
+    ██╗      █████╗ ████████╗███████╗███╗   ██╗████████╗██╗     ███████╗███╗   ██╗## Build and run container
+docker-compose up --build
+
+# Test API endpoints
+curl http://localhost:8001/health
+curl http://localhost:8001/recommend/123?limit=5
+curl http://localhost:8001/recommend/hybrid/123?limit=10  # Hybrid model (recommended)
+curl "http://localhost:8001/recommend/cold-start/999999?strategy=popular&limit=5"
+curl http://localhost:8001/movies/new?years_back=3&limit=10endpoints
+curl http://localhost:8001/health
+curl http://localhost:8001/recommend/123?limit=5
+curl http://localhost:8001/recommend/hybrid/123?limit=10  # Hybrid model (recommended)
+curl "http://localhost:8001/recommend/cold-start/999999?strategy=popular&limit=5"
+curl http://localhost:8001/movies/new?years_back=3&limit=10█╗
     ██║     ██╔══██╗╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝██║     ██╔════╝████╗  ██║██╔════╝
     ██║     ███████║   ██║   █████╗  ██╔██╗ ██║   ██║   ██║     █████╗  ██╔██╗ ██║███████╗
     ██║     ██╔══██║   ██║   ██╔══╝  ██║╚██╗██║   ██║   ██║     ██╔══╝  ██║╚██╗██║╚════██║

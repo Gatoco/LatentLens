@@ -16,16 +16,20 @@ services:
     # que se encuentra en el directorio actual (.).
     build: .
 
-    # Mapea el puerto 8000 de tu PC al puerto 8000 del contenedor.
+    # Mapea el puerto 8001 de tu PC al puerto 8000 del contenedor.
     ports:
-      - "8000:8000"
+      - "8001:8000"
 
-    # Mapea el directorio './mlruns' de tu PC al directorio '/app/mlruns'
-    # dentro de este contenedor. La variable ${PWD} es sustituida por
-    # Docker Compose por la ruta absoluta del proyecto, lo que resuelve
-    # problemas de ambigüedad en Windows.
+    # Variables de entorno para configuración del contenedor
+    environment:
+      - PYTHONPATH=/app
+      - DATA_PATH=/app/data/ml-25m
+
+    # Mapea directorios críticos entre el host y el contenedor
+    # para persistir datos de MLflow y acceso a datasets
     volumes:
       - ${PWD}/mlruns:/app/mlruns
+      - ${PWD}/data:/app/data
 
     # Asigna un nombre de red predecible al contenedor.
     hostname: latentlens-api

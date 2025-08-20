@@ -16,7 +16,8 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 # Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 import mlflow
 import mlflow.sklearn
