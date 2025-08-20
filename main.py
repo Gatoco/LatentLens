@@ -214,23 +214,81 @@ async def get_hybrid_recommendations(
         
         logger.info(f"Generated {len(knn_movie_candidates)} KNN candidates: {knn_movie_candidates[:5]}...")
         
-        # Return both sets of candidates for validation
+        # Step 3: Combine and Weight Candidates
+        logger.info(f"Combining and weighting candidates for user {user_id}")
+        
+        from collections import defaultdict
+        
+        # Initialize scoring dictionary
+        scores = defaultdict(float)
+        
+        # Step 3a: Weight SVD candidates (base score = 1.0)
+        for movie_id in svd_movie_candidates:
+            scores[movie_id] = 1.0
+        
+        logger.info(f"Assigned base scores to {len(svd_movie_candidates)} SVD candidates")
+        
+        # Step 3b: Weight KNN candidates (increment score by 0.5)
+        # This rewards movies suggested by both models
+        for movie_id in knn_movie_candidates:
+            scores[movie_id] += 0.5
+            
+        logger.info(f"Applied KNN weights to {len(knn_movie_candidates)} candidates")
+        
+        # Sort candidates by combined score (descending)
+        sorted_candidates = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        
+        # Extract top_n recommendations
+        final_recommendations = []
+        
+        for movie_id, score in sorted_candidates[:top_n]:
+            # Get movie information
+            movie_info = data_loader.movies[data_loader.movies['movieId'] == movie_id]
+            if not movie_info.empty:
+                movie_title = movie_info.iloc[0]['title']
+                
+                # Determine source(s) of recommendation
+                sources = []
+                if movie_id in svd_movie_candidates:
+                    sources.append("svd")
+                if movie_id in knn_movie_candidates:
+                    sources.append("knn")
+                
+                final_recommendations.append({
+                    "movieId": int(movie_id),
+                    "title": movie_title,
+                    "hybrid_score": float(score),
+                    "sources": sources,
+                    "rank": len(final_recommendations) + 1
+                })
+        
+        logger.info(f"Generated {len(final_recommendations)} final hybrid recommendations")
+        
+        # Return complete hybrid recommendation results
         return {
             "user_id": user_id,
             "top_n": top_n,
-            "step": "knn_candidates_generation",
-            "svd_candidates": {
-                "movie_ids": svd_movie_candidates,
-                "count": len(svd_movie_candidates)
+            "step": "candidate_weighting_and_ranking",
+            "recommendations": final_recommendations,
+            "total_recommendations": len(final_recommendations),
+            "candidate_sources": {
+                "svd_candidates": {
+                    "count": len(svd_movie_candidates),
+                    "weight": 1.0
+                },
+                "knn_candidates": {
+                    "count": len(knn_movie_candidates),
+                    "weight": 0.5
+                }
             },
-            "knn_candidates": {
-                "movie_ids": knn_movie_candidates,
-                "count": len(knn_movie_candidates),
-                "user_positive_movies": len(positive_movie_ids),
-                "processed_movies": min(10, len(positive_movie_ids))
+            "scoring_summary": {
+                "total_unique_candidates": len(scores),
+                "candidates_from_both_sources": len([m for m in scores if m in svd_movie_candidates and m in knn_movie_candidates]),
+                "svd_only": len([m for m in scores if m in svd_movie_candidates and m not in knn_movie_candidates]),
+                "knn_only": len([m for m in scores if m not in svd_movie_candidates and m in knn_movie_candidates])
             },
-            "algorithm": "hybrid_recommendation_system_step2",
-            "status": "knn_candidates_generated"
+            "algorithm": "hybrid_recommendation_system_step3",
+            "status": "candidate_weighting_completed"
         }
         
     except Exception as e:
