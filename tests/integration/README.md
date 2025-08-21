@@ -1,0 +1,1 @@
+# Integration Tests\n\nTests de integración del sistema completo.

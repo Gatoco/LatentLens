@@ -1,0 +1,1 @@
+# API Tests\n\nTests para endpoints de la API de LatentLens.
