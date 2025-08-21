@@ -65,7 +65,7 @@ class RecommendationService:
         self.data_df = load_and_prepare_data()
         
         # Prepare movie statistics for baseline recommendations
-        self.movie_stats = self.data_df.groupby('title').agg(
+        self.movie_stats = self.data_df.groupby(['movieId', 'title']).agg(
             num_ratings=('rating', 'count'),
             mean_rating=('rating', 'mean')
         ).reset_index()
@@ -344,6 +344,7 @@ class RecommendationService:
         recommendations = []
         for _, movie in top_movies.iterrows():
             recommendations.append({
+                "movieId": int(movie['movieId']),
                 "title": movie['title'],
                 "average_rating": round(movie['mean_rating'], 2),
                 "num_ratings": int(movie['num_ratings']),
