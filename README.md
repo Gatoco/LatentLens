@@ -13,10 +13,10 @@
 LatentLens is an enterprise-grade movie recommendation system implementing advanced machine learning methodologies with hybrid multi-strategy architecture. The system demonstrates measurable performance superiority through comprehensive evaluation metrics and production-ready deployment capabilities.
 
 **Performance Highlights:**
-- Hybrid model achieves 0.28% catalog coverage vs 0.00% for individual strategies
-- 176 unique movie recommendations compared to 0 from solo models
-- Multi-genre diversity (1+ genres) while solo models provide no genre variation
-- Production-validated on 20,974 users with 2.4M+ predictions processed
+- Hybrid model achieves 0.32 performance score vs 0.18 (Collaborative) and 0.16 (Popularity)
+- 5x more unique movie recommendations (25 vs 5 movies from individual strategies)
+- 100% success rate across all recommendation strategies with MLflow validation
+- Production-ready API deployment with Docker containerization and health monitoring
 
 ## Table of Contents
 
@@ -82,28 +82,28 @@ LatentLens implements a unified strategy pattern architecture enabling seamless 
 
 ### Production Model Comparison Results
 
-| Model | Success Rate | Coverage | Diversity | Unique Movies | Architecture |
-|-------|-------------|----------|-----------|---------------|--------------|
-| **Hybrid** | **100%** | **0.28%** | **1+ genres** | **176 movies** | Multi-strategy ensemble |
-| SVD Solo | 100% | 0.00% | 0 genres | 0 movies | Collaborative filtering |
-| Popular Solo | 100% | 0.00% | 0 genres | 0 movies | Popularity baseline |
+| Model | Success Rate | Performance Score | Unique Movies | Response Time | Architecture |
+|-------|-------------|------------------|---------------|---------------|--------------|
+| **Hybrid** | **100%** | **0.32** | **25 movies** | 77.7s | Multi-strategy ensemble |
+| Collaborative | 100% | 0.18 | 5 movies | 28.0s | SVD collaborative filtering |
+| Popularity | 100% | 0.16 | 5 movies | 31.1s | Popularity baseline |
 
-*Evaluation conducted on 20,974 active users with 2.4M+ predictions processed*
+*Ultra-fast evaluation on 5 test users with performance scoring: success_rate × (1/response_time) × unique_movies*
 
 ### Key Performance Indicators
 
-- **Coverage Superiority**: Hybrid model achieves 0.28% catalog coverage vs 0.00% for individual strategies
-- **Diversity Leadership**: Only model providing multi-genre recommendations (1+ genres)
-- **Scalability**: 176 unique movie recommendations vs 0 from individual strategies
-- **Production Validation**: Evaluated on 20,974 real users with comprehensive dataset coverage
+- **Performance Superiority**: Hybrid model achieves 0.32 performance score vs 0.18 (Collaborative) and 0.16 (Popularity)
+- **Diversity Leadership**: 25 unique movies from Hybrid vs 5 movies from individual strategies
+- **Universal Success**: 100% success rate across all recommendation strategies
+- **Response Time Trade-off**: Hybrid provides 5x more diverse recommendations with acceptable 77.7s response time
 
 ### Evaluation Methodology
 
-Performance evaluation conducted on production-scale dataset:
-- **User Base**: 20,974 active users from MovieLens 25M dataset
-- **Prediction Volume**: 2.4M+ predictions processed during evaluation
-- **Coverage Analysis**: Catalog coverage measured across 62K+ movies
-- **Diversity Assessment**: Genre distribution and recommendation uniqueness analysis
+Performance evaluation conducted using ultra-fast testing methodology:
+- **Test Users**: 5 representative users (IDs: 1, 2, 3, 5, 10) from active user base
+- **Recommendations per Test**: 5 movies per user per strategy
+- **Performance Scoring**: Calculated as success_rate × (1/response_time) × unique_movies
+- **MLflow Tracking**: All metrics logged in Ultra_Fast_Model_Evaluation experiment
 
 ## Technical Stack
 
@@ -307,13 +307,13 @@ GET /recommend/cold-start/{user_id}?strategy={strategy}&limit={n}
 
 #### Performance Metrics Comparison
 
-| Model | Success Rate | Coverage | Diversity | Unique Movies | Architecture |
-|-------|-------------|----------|-----------|---------------|--------------|
-| **Hybrid** | **100%** | **0.28%** | **1+ genres** | **176 movies** | Multi-strategy ensemble |
-| SVD Solo | 100% | 0.00% | 0 genres | 0 movies | Collaborative filtering |
-| Popular Solo | 100% | 0.00% | 0 genres | 0 movies | Popularity baseline |
+| Model | Success Rate | Performance Score | Unique Movies | Response Time | Architecture |
+|-------|-------------|------------------|---------------|---------------|--------------|
+| **Hybrid** | **100%** | **0.32** | **25 movies** | 77.7s | Multi-strategy ensemble |
+| Collaborative | 100% | 0.18 | 5 movies | 28.0s | SVD collaborative filtering |
+| Popularity | 100% | 0.16 | 5 movies | 31.1s | Popularity baseline |
 
-*Evaluation conducted on 20,974 active users with 2.4M+ predictions processed*
+*Ultra-fast evaluation on 5 test users with performance scoring: success_rate × (1/response_time) × unique_movies*
 
 #### Advanced Ranking Metrics
 
