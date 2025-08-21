@@ -137,13 +137,13 @@ Performance evaluation conducted using ultra-fast testing methodology:
 
 #### Production Model Comparison
 
-| Model | Success Rate | Coverage | Diversity | Unique Movies | Architecture |
-|-------|-------------|----------|-----------|---------------|--------------|
-| **Hybrid** | **100%** | **0.28%** | **1+ genres** | **176 movies** | Multi-strategy ensemble |
-| SVD Solo | 100% | 0.00% | 0 genres | 0 movies | Collaborative filtering |
-| Popular Solo | 100% | 0.00% | 0 genres | 0 movies | Popularity baseline |
+| Model | Success Rate | Performance Score | Unique Movies | Response Time | Architecture |
+|-------|-------------|------------------|---------------|---------------|--------------|
+| **Hybrid** | **100%** | **0.32** | **25 movies** | 77.7s | Multi-strategy ensemble |
+| Collaborative | 100% | 0.18 | 5 movies | 28.0s | SVD collaborative filtering |
+| Popularity | 100% | 0.16 | 5 movies | 31.1s | Popularity baseline |
 
-*Evaluation conducted on 39,974 active users with 3.4M+ predictions processed*
+*Ultra-fast evaluation on 5 test users with performance scoring: success_rate × (1/response_time) × unique_movies*
 
 #### Detailed Performance Analysis
 
@@ -698,7 +698,6 @@ python validate_cold_start.py
 
 ### Experiment Tracking
 
-```bash
 ## Project Structure
 
 ```
@@ -738,11 +737,6 @@ LatentLens/
 ├── Dockerfile                    # Container build specification
 ├── requirements.txt              # Python dependencies
 └── setup.py                     # Package installation configuration
-```
-
----
-├── setup.py                   # Package configuration
-└── Dockerfile                 # Container definition
 ```
 
 ## Evaluation Framework
