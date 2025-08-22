@@ -1,0 +1,52 @@
+# LatentLens Training Configuration
+# ================================
+# 
+# Archivo de configuración para el pipeline de entrenamiento
+# Uso: python src/train.py --config config.yaml
+
+# Configuración de datos
+data:
+  sample_size: 5000  # Número de usuarios para sampling (null = todos)
+  test_size: 0.2     # Proporción para test set
+
+# Configuración del modelo SVD (Collaborative Filtering)
+svd:
+  n_factors: 100       # Número de factores latentes
+  n_epochs: 20         # Épocas de entrenamiento
+  learning_rate: 0.005 # Tasa de aprendizaje
+  regularization: 0.02 # Regularización L2
+
+# Configuración del modelo KNN (Item Similarity)
+knn:
+  k_neighbors: 20         # Número de vecinos
+  similarity_metric: cosine # Métrica de similaridad
+
+# Configuración de evaluación
+evaluation:
+  eval_users: 100      # Usuarios para evaluación híbrida
+  metrics:
+    - rmse
+    - mae
+    - precision_at_k
+    - recall_at_k
+
+# Configuración del sistema híbrido
+hybrid:
+  weights:
+    collaborative: 0.4   # Peso para filtrado colaborativo
+    content_based: 0.3   # Peso para basado en contenido
+    item_similarity: 0.2 # Peso para similaridad de items
+    popularity: 0.1      # Peso para popularidad
+
+# Configuración de MLflow
+mlflow:
+  tracking_uri: "./mlruns"
+  experiment_name: "latentlens_pipeline"
+  auto_log: true
+
+# Configuración de artefactos
+artifacts:
+  save_models: true
+  save_metrics: true
+  save_predictions: false
+  compression: true

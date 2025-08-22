@@ -1,0 +1,242 @@
+name: 🤖 LatentLens Model Training Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiment_name:
+        description: 'Nombre del experimento MLflow'
+        required: false
+        default: 'github_actions_training'
+        type: string
+      sample_size:
+        description: 'Número de usuarios para sampling (vacío = todos)'
+        required: false
+        default: '1000'
+        type: string
+      n_factors:
+        description: 'Número de factores latentes para SVD'
+        required: false
+        default: '50'
+        type: string
+      n_epochs:
+        description: 'Número de épocas de entrenamiento'
+        required: false
+        default: '10'
+        type: string
+  
+  # Trigger automático en push a main (opcional)
+  # push:
+  #   branches: [ main ]
+  #   paths: 
+  #     - 'src/**'
+  #     - 'config.yaml'
+
+jobs:
+  train-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    strategy:
+      matrix:
+        python-version: [3.10]
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Configurar Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: 📦 Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyyaml  # Para archivo de configuración
+    
+    - name: 📊 Verificar datos
+      run: |
+        echo "🔍 Verificando estructura de datos..."
+        ls -la data/
+        if [ -d "data/ml-25m" ]; then
+          echo "✅ Dataset MovieLens encontrado"
+          ls -la data/ml-25m/ | head -10
+        else
+          echo "❌ Dataset no encontrado"
+          echo "📥 Descargando dataset MovieLens 25M..."
+          mkdir -p data
+          # Aquí podrías añadir script para descargar datos si no están
+          echo "⚠️  Usando datos de prueba para CI/CD"
+        fi
+    
+    - name: 🏗️ Crear directorios necesarios
+      run: |
+        mkdir -p logs
+        mkdir -p artifacts
+        mkdir -p mlruns
+    
+    - name: 🧪 Ejecutar pipeline de entrenamiento
+      env:
+        MLFLOW_TRACKING_URI: ./mlruns
+      run: |
+        echo "🚀 Iniciando entrenamiento..."
+        echo "📊 Parámetros:"
+        echo "  - Experimento: ${{ github.event.inputs.experiment_name || 'github_actions_training' }}"
+        echo "  - Sample size: ${{ github.event.inputs.sample_size || '1000' }}"
+        echo "  - Factores: ${{ github.event.inputs.n_factors || '50' }}"
+        echo "  - Épocas: ${{ github.event.inputs.n_epochs || '10' }}"
+        
+        python src/train.py \
+          --experiment-name "${{ github.event.inputs.experiment_name || 'github_actions_training' }}" \
+          --sample-size ${{ github.event.inputs.sample_size || 1000 }} \
+          --n-factors ${{ github.event.inputs.n_factors || 50 }} \
+          --n-epochs ${{ github.event.inputs.n_epochs || 10 }} \
+          --eval-users 50
+    
+    - name: 📊 Verificar resultados
+      run: |
+        echo "🔍 Verificando artefactos generados..."
+        if [ -d "artifacts" ]; then
+          echo "✅ Directorio de artefactos encontrado"
+          ls -la artifacts/
+          find artifacts/ -name "*.json" -exec echo "📄 {}" \; -exec head -5 {} \;
+        fi
+        
+        if [ -d "mlruns" ]; then
+          echo "✅ Runs de MLflow encontrados"
+          find mlruns/ -name "*.json" | head -5
+        fi
+        
+        if [ -d "logs" ]; then
+          echo "✅ Logs de entrenamiento"
+          if [ -f "logs/training.log" ]; then
+            echo "📝 Últimas líneas del log:"
+            tail -20 logs/training.log
+          fi
+        fi
+    
+    - name: 🧪 Ejecutar tests básicos
+      run: |
+        echo "🧪 Ejecutando validaciones básicas..."
+        python -c "
+        import json
+        import glob
+        
+        # Verificar que se generaron métricas
+        metric_files = glob.glob('artifacts/metrics_*.json')
+        if metric_files:
+            with open(metric_files[0], 'r') as f:
+                metrics = json.load(f)
+            print('✅ Métricas encontradas:', list(metrics.keys()))
+            
+            # Verificar métricas críticas
+            if 'collaborative' in metrics:
+                rmse = metrics['collaborative'].get('rmse', float('inf'))
+                print(f'📊 RMSE Colaborativo: {rmse}')
+                assert rmse < 2.0, f'RMSE muy alto: {rmse}'
+            
+            if 'hybrid' in metrics:
+                score = metrics['hybrid'].get('mean_score', 0)
+                print(f'🎯 Score Híbrido: {score}')
+                assert score > 0, f'Score híbrido inválido: {score}'
+            
+            print('✅ Todas las validaciones pasaron')
+        else:
+            print('❌ No se encontraron archivos de métricas')
+            exit(1)
+        "
+    
+    - name: 📦 Subir artefactos
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: training-artifacts-${{ github.run_number }}
+        path: |
+          artifacts/
+          logs/
+          mlruns/
+        retention-days: 30
+    
+    - name: 📊 Generar reporte de entrenamiento
+      if: always()
+      run: |
+        echo "# 🎯 Reporte de Entrenamiento - Run #${{ github.run_number }}" > training_report.md
+        echo "" >> training_report.md
+        echo "**Fecha:** $(date)" >> training_report.md
+        echo "**Commit:** ${{ github.sha }}" >> training_report.md
+        echo "**Experimento:** ${{ github.event.inputs.experiment_name || 'github_actions_training' }}" >> training_report.md
+        echo "" >> training_report.md
+        echo "## 📊 Parámetros de Entrenamiento" >> training_report.md
+        echo "- **Sample Size:** ${{ github.event.inputs.sample_size || '1000' }}" >> training_report.md
+        echo "- **Factores SVD:** ${{ github.event.inputs.n_factors || '50' }}" >> training_report.md
+        echo "- **Épocas:** ${{ github.event.inputs.n_epochs || '10' }}" >> training_report.md
+        echo "" >> training_report.md
+        echo "## 📈 Resultados" >> training_report.md
+        
+        if [ -f "logs/training.log" ]; then
+          echo "### 📝 Log de Entrenamiento" >> training_report.md
+          echo '```' >> training_report.md
+          tail -50 logs/training.log >> training_report.md
+          echo '```' >> training_report.md
+        fi
+        
+        # Añadir métricas si existen
+        if ls artifacts/metrics_*.json 1> /dev/null 2>&1; then
+          echo "### 📊 Métricas Finales" >> training_report.md
+          echo '```json' >> training_report.md
+          cat artifacts/metrics_*.json | head -20 >> training_report.md
+          echo '```' >> training_report.md
+        fi
+        
+        echo "## 🎯 Estado Final" >> training_report.md
+        if [ ${{ job.status }} == "success" ]; then
+          echo "✅ **Entrenamiento completado exitosamente**" >> training_report.md
+        else
+          echo "❌ **Error en el entrenamiento**" >> training_report.md
+        fi
+    
+    - name: 📄 Subir reporte
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: training-report-${{ github.run_number }}
+        path: training_report.md
+        retention-days: 90
+    
+    - name: 💬 Comentar en PR (si aplica)
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('training_report.md')) {
+            const report = fs.readFileSync('training_report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+          }
+    
+    - name: 🎉 Resumen final
+      if: always()
+      run: |
+        echo "🎬 RESUMEN DEL ENTRENAMIENTO"
+        echo "=========================="
+        echo "🔗 Run: ${{ github.run_number }}"
+        echo "⏰ Duración: ${{ job.status }}"
+        echo "📊 Experimento: ${{ github.event.inputs.experiment_name || 'github_actions_training' }}"
+        echo ""
+        if [ ${{ job.status }} == "success" ]; then
+          echo "✅ ¡Entrenamiento completado exitosamente!"
+          echo "📦 Artefactos disponibles en la sección 'Artifacts'"
+          echo "📊 Métricas guardadas en MLflow"
+        else
+          echo "❌ Error en el entrenamiento"
+          echo "📝 Revisa los logs para más detalles"
+        fi
+        echo ""
+        echo "🔗 Ver artefactos: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

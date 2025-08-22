@@ -1,0 +1,11 @@
+{
+  "sample_size": 500,
+  "n_factors": 20,
+  "n_epochs": 5,
+  "test_size": 0.2,
+  "k_neighbors": 20,
+  "eval_users": 10,
+  "learning_rate": 0.005,
+  "regularization": 0.02,
+  "similarity_metric": "cosine"
+}
