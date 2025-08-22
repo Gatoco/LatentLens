@@ -1,0 +1,47 @@
+stages:
+  prepare_data:
+    cmd: python src/data_loader.py --validate
+    deps:
+      - src/data_loader.py
+      - data/ml-25m
+    outs:
+      - data/processed
+    desc: "Validar y preparar datos MovieLens"
+
+  train_model:
+    cmd: python src/train.py --experiment-name dvc_pipeline --sample-size 5000 --config config.yaml
+    deps:
+      - src/train.py
+      - src/models/
+      - data/ml-25m
+      - config.yaml
+    outs:
+      - artifacts/models
+    metrics:
+      - artifacts/metrics.json
+    params:
+      - config.yaml:
+          - data.sample_size
+          - svd.n_factors
+          - svd.n_epochs
+          - hybrid.weights
+    desc: "Entrenar modelo híbrido de recomendaciones"
+
+  evaluate_model:
+    cmd: python scripts/evaluate_models.py --input artifacts/models --output reports/evaluation.json
+    deps:
+      - scripts/evaluate_models.py
+      - artifacts/models
+    metrics:
+      - reports/evaluation.json
+    desc: "Evaluar métricas detalladas del modelo"
+
+  deploy_ready:
+    cmd: python scripts/prepare_deployment.py --models artifacts/models --api src/main.py
+    deps:
+      - scripts/prepare_deployment.py
+      - artifacts/models
+      - src/main.py
+    outs:
+      - deployment/
+    desc: "Preparar artefactos para deployment"

@@ -56,7 +56,68 @@ LatentLens implements a unified strategy pattern architecture enabling seamless 
 ├─────────────────────────────────────────────────────────────┤
 │                Data Processing Layer                       │
 │              (MovieLens 25M Dataset)                      │
+│                   + DVC Versioning                        │
 └─────────────────────────────────────────────────────────────┘
+```
+
+## Dataset Information
+
+### MovieLens 25M Dataset
+
+**Source**: [GroupLens Research](https://grouplens.org/datasets/movielens/25m/)  
+**License**: Available for academic and personal use  
+**Last Updated**: December 2019  
+
+**Dataset Composition**:
+- **25,000,095 ratings** (0.5-5.0 stars, increments of 0.5)
+- **162,541 users** (active users who rated at least 20 movies)
+- **62,423 movies** (released 1902-2019)
+- **1,128 tags** applied to movies by users
+- **Genome scores**: 14.9M relevance scores for 1,128 tag-movie pairs
+
+**Data Files**:
+```
+data/ml-25m/
+├── ratings.csv      # userId, movieId, rating, timestamp
+├── movies.csv       # movieId, title, genres
+├── tags.csv         # userId, movieId, tag, timestamp
+├── links.csv        # movieId, imdbId, tmdbId
+├── genome-scores.csv # movieId, tagId, relevance
+├── genome-tags.csv   # tagId, tag
+└── README.txt       # Official dataset documentation
+```
+
+### Data Version Control (DVC)
+
+LatentLens implements **DVC** for dataset and model versioning:
+
+```bash
+# Dataset tracking
+data/ml-25m.dvc          # DVC metadata for MovieLens dataset
+dvc_storage/             # Local DVC cache (gitignored)
+
+# Automated pipeline
+dvc.yaml                 # Reproducible ML pipeline definition
+dvc.lock                 # Pipeline lock file (auto-generated)
+```
+
+**Key Benefits**:
+- 📊 **Dataset Versioning**: Complete data lineage tracking
+- 🔄 **Reproducible Pipelines**: `dvc repro` recreates entire workflow
+- 📦 **Model Artifacts**: Automatic versioning of trained models
+- 🚀 **Storage Efficiency**: Only metadata in Git, large files in DVC storage
+- 🤝 **Team Collaboration**: Share datasets without repository bloat
+
+**Usage**:
+```bash
+# Get latest data and models
+dvc pull
+
+# Run complete training pipeline
+dvc repro
+
+# Compare experiment metrics
+dvc metrics show --all-branches
 ```
 
 ### Core Components
@@ -149,6 +210,111 @@ Performance evaluation conducted using ultra-fast testing methodology:
 
 **Hybrid Model Superiority:**
 - **Coverage Advantage**: 0.28% catalog coverage vs 0.00% for individual models
+
+## Training Pipeline
+
+### Unified Training Script
+
+LatentLens features a unified training pipeline that consolidates the entire ML workflow into a single command:
+
+```bash
+# Basic training with default parameters
+python src/train.py
+
+# Advanced training with custom configuration
+python src/train.py --experiment-name "production_v1" \
+                   --sample-size 10000 \
+                   --n-factors 100 \
+                   --n-epochs 50 \
+                   --config config.yaml
+```
+
+### Pipeline Architecture
+
+The training pipeline implements a cohesive workflow that:
+
+1. **Data Loading & Preprocessing**: Automatic MovieLens dataset loading with configurable sampling
+2. **Multi-Model Training**: Trains 4 recommendation strategies in parallel
+3. **Evaluation & Metrics**: Comprehensive model evaluation with MLflow tracking
+4. **Artifact Management**: Automatic saving of models, metrics, and configurations
+5. **MLflow Integration**: Complete experiment tracking and model registry
+
+### DVC Pipeline (Advanced Reproducibility)
+
+For maximum reproducibility, use the DVC pipeline:
+
+```bash
+# Initialize DVC (first time only)
+dvc init
+dvc remote add -d storage ./dvc_storage
+
+# Pull data and models
+dvc pull
+
+# Run complete pipeline
+dvc repro
+
+# View pipeline dependency graph
+dvc dag
+
+# Compare metrics across experiments
+dvc metrics show --all-branches
+```
+
+**Pipeline Stages**:
+```mermaid
+graph TD
+    A[prepare_data] --> B[train_model]
+    B --> C[evaluate_model]
+    B --> D[deploy_ready]
+```
+
+### Configuration Management
+
+**YAML Configuration** (`config.yaml`):
+```yaml
+data:
+  sample_size: 5000
+  test_size: 0.2
+
+svd:
+  n_factors: 100
+  n_epochs: 20
+  learning_rate: 0.005
+
+hybrid:
+  weights:
+    collaborative: 0.4
+    content_based: 0.3
+    item_similarity: 0.2
+    popularity: 0.1
+```
+
+**Command Line Arguments**:
+```bash
+python src/train.py --help
+# Shows all available parameters:
+# --experiment-name, --sample-size, --n-factors, 
+# --n-epochs, --k-neighbors, --eval-users, --config
+```
+
+### CI/CD Integration
+
+GitHub Actions workflow for automated training:
+
+```yaml
+# .github/workflows/train-model.yml
+name: 🤖 LatentLens Model Training Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      experiment_name:
+        description: 'MLflow experiment name'
+        default: 'github_actions_training'
+```
+
+**Manual Trigger**: Go to Actions → "LatentLens Model Training Pipeline" → "Run workflow"
+
 ## Installation & Deployment
 
 ### Production Deployment

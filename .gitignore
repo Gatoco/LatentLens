@@ -187,6 +187,9 @@ venv/
 
 # Ignore the data folder to avoid uploading large or private datasets
 data/
+# But allow DVC tracking files
+!data/*.dvc
+!data/.gitkeep
 notebooks/mlruns/
 mlruns/
 # Ignore the model files to prevent uploading large models
@@ -202,3 +205,11 @@ mlruns/
 
 # --- Archivos específicos de Notebooks ---
 .ipynb_checkpoints/
+
+# --- DVC (Data Version Control) ---
+/dvc_storage/
+# Keep DVC tracking files in Git
+!*.dvc
+!dvc.yaml
+!dvc.lock
+!.dvcignore
