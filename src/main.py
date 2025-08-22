@@ -2,15 +2,35 @@
 FastAPI main application with hybrid recommendation system
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from typing import List, Dict, Optional
 import uvicorn
 import logging
+import time
+import json
+from datetime import datetime
 from contextlib import asynccontextmanager
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure enhanced logging for production monitoring
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Para docker logs
+        logging.FileHandler('logs/api.log', encoding='utf-8')  # Para persistencia
+    ]
+)
 logger = logging.getLogger(__name__)
+
+# Crear logger específico para métricas
+metrics_logger = logging.getLogger('metrics')
+metrics_logger.setLevel(logging.INFO)
+
+# Handler para métricas en formato JSON (fácil parsing)
+metrics_handler = logging.StreamHandler()
+metrics_handler.setFormatter(logging.Formatter('%(message)s'))
+metrics_logger.addHandler(metrics_handler)
+metrics_logger.propagate = False
 
 # Global variables to store loaded models and services
 data_loader = None
@@ -64,6 +84,66 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+# Middleware para logging y métricas
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware para logear todas las requests con métricas de tiempo"""
+    
+    start_time = time.time()
+    
+    # Información del request
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    request_id = f"{int(time.time())}-{hash(f'{client_ip}{user_agent}')}"
+    
+    # Log del inicio del request
+    logger.info(f"🌐 [{request_id}] {request.method} {request.url} - Client: {client_ip}")
+    
+    # Procesar request
+    try:
+        response = await call_next(request)
+        processing_time = time.time() - start_time
+        
+        # Log del resultado
+        logger.info(f"✅ [{request_id}] Response: {response.status_code} - Time: {processing_time:.3f}s")
+        
+        # Metrics log en formato JSON para análisis
+        metrics_data = {
+            "timestamp": datetime.now().isoformat(),
+            "request_id": request_id,
+            "method": request.method,
+            "path": str(request.url.path),
+            "query_params": dict(request.query_params),
+            "status_code": response.status_code,
+            "processing_time_seconds": round(processing_time, 3),
+            "client_ip": client_ip,
+            "user_agent": user_agent[:100]  # Truncar para evitar logs muy largos
+        }
+        
+        # Log de métricas en formato JSON
+        metrics_logger.info(f"METRICS: {json.dumps(metrics_data)}")
+        
+        return response
+        
+    except Exception as e:
+        processing_time = time.time() - start_time
+        logger.error(f"❌ [{request_id}] Error: {str(e)} - Time: {processing_time:.3f}s")
+        
+        # Metrics log para errores
+        error_metrics = {
+            "timestamp": datetime.now().isoformat(),
+            "request_id": request_id,
+            "method": request.method,
+            "path": str(request.url.path),
+            "status_code": 500,
+            "processing_time_seconds": round(processing_time, 3),
+            "error": str(e),
+            "client_ip": client_ip
+        }
+        
+        metrics_logger.error(f"ERROR_METRICS: {json.dumps(error_metrics)}")
+        raise e
 
 # Health check endpoint (liveness)
 @app.get("/health")
@@ -350,6 +430,10 @@ async def get_hybrid_recommendations(
     """
     global hybrid_service, recommendation_service, data_loader
     
+    # MONITORING: Log inicio de recomendación
+    start_time = time.time()
+    logger.info(f"🎯 Starting hybrid recommendation for user_id={user_id}, top_n={top_n}")
+    
     if hybrid_service is None:
         raise HTTPException(status_code=503, detail="Hybrid service not available")
     
@@ -364,7 +448,7 @@ async def get_hybrid_recommendations(
         is_new_user = _is_new_user(user_id)
         has_sufficient_data = _has_sufficient_ratings(user_id, min_ratings=5)
         
-        logger.info(f"User {user_id} analysis - New user: {is_new_user}, Sufficient data: {has_sufficient_data}")
+        logger.info(f"👤 User {user_id} analysis - New user: {is_new_user}, Sufficient data: {has_sufficient_data}")
         
         # Handle Cold Start Problem
         if is_new_user:

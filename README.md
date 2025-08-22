@@ -1,403 +1,138 @@
 
-# LatentLens: Enterprise Movie Recommendation System
+# LatentLens — Quickstart README
 
-[![Build Status](https://img.shields.io/badge/Status-Production%20Ready-green)](https://github.com/Gatoco/LatentLens)
-[![Python Version](https://img.shields.io/badge/Python-3.10-blue)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.116.1-009688)](https://fastapi.tiangolo.com)
-[![MLflow](https://img.shields.io/badge/MLflow-3.2.0-9457EB)](https://mlflow.org)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://docker.com)
-[![License](https://img.shields.io/badge/License-MIT-black)](LICENSE)
+Breve, práctico y enfocado para que un desarrollador pueda ejecutar el proyecto en <15 minutos.
 
-## Executive Summary
+Resumen corto:
+- Proyecto: API de recomendaciones de películas (FastAPI) + modelos (SVD, KNN, hybrid)
+- Distribución recomendada: Docker (imagen disponible en Docker Hub: gatoco/latentlens)
 
-LatentLens is an enterprise-grade movie recommendation system implementing advanced machine learning methodologies with hybrid multi-strategy architecture. The system demonstrates measurable performance superiority through comprehensive evaluation metrics and production-ready deployment capabilities.
+Requisitos mínimos
+- Docker (Desktop) installed and running
+- Optional: Python 3.10+ for local dev
+- Recommended: 8+ GB RAM when using full MovieLens 25M dataset
 
-**Performance Highlights:**
-- Hybrid model achieves 0.32 performance score vs 0.18 (Collaborative) and 0.16 (Popularity)
-- 5x more unique movie recommendations (25 vs 5 movies from individual strategies)
-- 100% success rate across all recommendation strategies with MLflow validation
-- Production-ready API deployment with Docker containerization and health monitoring
+Quick checklist
+- [ ] Clonar repo
+- [ ] Usar Docker quickstart (recommended)
+- [ ] (Opcional) Local dev in venv
+- [ ] Configure GitHub Secrets for CI/CD if you want automatic builds
 
-## Table of Contents
+1) Docker Quickstart (recommended, < 15 min)
 
-- [Architecture Overview](#architecture-overview)
-- [Performance Benchmarks](#performance-benchmarks)
-- [Technical Stack](#technical-stack)
-- [Installation & Deployment](#installation--deployment)
-- [API Documentation](#api-documentation)
-- [Model Performance](#model-performance)
-- [Development Setup](#development-setup)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Architecture Overview
-
-### System Design Philosophy
-
-LatentLens implements a unified strategy pattern architecture enabling seamless integration of multiple recommendation algorithms. The system prioritizes scalability, maintainability, and performance through modular design principles.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    API Gateway Layer                        │
-│                     (FastAPI)                              │
-├─────────────────────────────────────────────────────────────┤
-│                 Unified Recommender                        │
-│                 (Strategy Pattern)                         │
-├──────────────┬──────────────┬──────────────┬──────────────┤
-│ Collaborative│ Hybrid       │ Popularity   │ Item         │
-│ Filtering    │ Strategy     │ Baseline     │ Similarity   │
-│ (SVD)        │              │              │ (KNN)        │
-├──────────────┼──────────────┼──────────────┼──────────────┤
-│           Cold Start Handler                               │
-│         (Multi-Strategy)                                   │
-├─────────────────────────────────────────────────────────────┤
-│                MLflow Tracking Layer                       │
-│           (Experiment & Model Registry)                    │
-├─────────────────────────────────────────────────────────────┤
-│                Data Processing Layer                       │
-│              (MovieLens 25M Dataset)                      │
-│                   + DVC Versioning                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Dataset Information
-
-### MovieLens 25M Dataset
-
-**Source**: [GroupLens Research](https://grouplens.org/datasets/movielens/25m/)  
-**License**: Available for academic and personal use  
-**Last Updated**: December 2019  
-
-**Dataset Composition**:
-- **25,000,095 ratings** (0.5-5.0 stars, increments of 0.5)
-- **162,541 users** (active users who rated at least 20 movies)
-- **62,423 movies** (released 1902-2019)
-- **1,128 tags** applied to movies by users
-- **Genome scores**: 14.9M relevance scores for 1,128 tag-movie pairs
-
-**Data Files**:
-```
-data/ml-25m/
-├── ratings.csv      # userId, movieId, rating, timestamp
-├── movies.csv       # movieId, title, genres
-├── tags.csv         # userId, movieId, tag, timestamp
-├── links.csv        # movieId, imdbId, tmdbId
-├── genome-scores.csv # movieId, tagId, relevance
-├── genome-tags.csv   # tagId, tag
-└── README.txt       # Official dataset documentation
-```
-
-### Data Version Control (DVC)
-
-LatentLens implements **DVC** for dataset and model versioning:
+Instructions:
 
 ```bash
-# Dataset tracking
-data/ml-25m.dvc          # DVC metadata for MovieLens dataset
-dvc_storage/             # Local DVC cache (gitignored)
+# Pull pre-built image from Docker Hub
+docker pull gatoco/latentlens:latest
 
-# Automated pipeline
-dvc.yaml                 # Reproducible ML pipeline definition
-dvc.lock                 # Pipeline lock file (auto-generated)
+# Run container (API on host:8000)
+docker run --rm -p 8000:8000 --name latentlens gatoco/latentlens:latest
 ```
 
-**Key Benefits**:
-- 📊 **Dataset Versioning**: Complete data lineage tracking
-- 🔄 **Reproducible Pipelines**: `dvc repro` recreates entire workflow
-- 📦 **Model Artifacts**: Automatic versioning of trained models
-- 🚀 **Storage Efficiency**: Only metadata in Git, large files in DVC storage
-- 🤝 **Team Collaboration**: Share datasets without repository bloat
-
-**Usage**:
-```bash
-# Get latest data and models
-dvc pull
-
-# Run complete training pipeline
-dvc repro
-
-# Compare experiment metrics
-dvc metrics show --all-branches
-```
-
-### Core Components
-
-**1. Recommendation Strategies**
-- **Collaborative Filtering**: SVD matrix factorization with 100 factors, 20 epochs
-- **Hybrid Strategy**: Weighted ensemble combining collaborative, item similarity, and content-based approaches
-- **Popularity Baseline**: Statistical ranking with configurable rating thresholds
-- **Item Similarity**: KNN-based cosine similarity for item-to-item recommendations
-- **Cold Start Handler**: Multi-strategy approach for new users and items
-
-**2. Data Pipeline**
-- MovieLens 25M dataset: 25M ratings, 162K users, 62K movies
-- Optimized data loading with pandas and efficient memory management
-- Pre-computed similarity matrices and cached model artifacts
-
-**3. MLflow Integration**
-- Complete experiment tracking with parameter and metric logging
-- Model registry with versioning and stage management
-- Automated model deployment and artifact storage
-
-## Performance Benchmarks
-
-### Production Model Comparison Results
-
-| Model | Success Rate | Performance Score | Unique Movies | Response Time | Architecture |
-|-------|-------------|------------------|---------------|---------------|--------------|
-| **Hybrid** | **100%** | **0.32** | **25 movies** | 77.7s | Multi-strategy ensemble |
-| Collaborative | 100% | 0.18 | 5 movies | 28.0s | SVD collaborative filtering |
-| Popularity | 100% | 0.16 | 5 movies | 31.1s | Popularity baseline |
-
-*Ultra-fast evaluation on 5 test users with performance scoring: success_rate × (1/response_time) × unique_movies*
-
-### Key Performance Indicators
-
-- **Performance Superiority**: Hybrid model achieves 0.32 performance score vs 0.18 (Collaborative) and 0.16 (Popularity)
-- **Diversity Leadership**: 25 unique movies from Hybrid vs 5 movies from individual strategies
-- **Universal Success**: 100% success rate across all recommendation strategies
-- **Response Time Trade-off**: Hybrid provides 5x more diverse recommendations with acceptable 77.7s response time
-
-### Evaluation Methodology
-
-Performance evaluation conducted using ultra-fast testing methodology:
-- **Test Users**: 5 representative users (IDs: 1, 2, 3, 5, 10) from active user base
-- **Recommendations per Test**: 5 movies per user per strategy
-- **Performance Scoring**: Calculated as success_rate × (1/response_time) × unique_movies
-- **MLflow Tracking**: All metrics logged in Ultra_Fast_Model_Evaluation experiment
-
-## Technical Stack
-
-### Core Technologies
-
-- **Python 3.10**: Primary development language with type hints
-- **FastAPI 0.116.1**: High-performance API framework with automatic documentation
-- **MLflow 3.2.0**: Complete MLOps lifecycle management
-- **Docker & Docker Compose**: Containerization and orchestration
-- **Pandas & NumPy**: Data manipulation and numerical computing
-- **Scikit-learn**: Machine learning algorithms and utilities
-- **Surprise**: Collaborative filtering implementation
-
-### Data Science Libraries
-
-- **Matrix Factorization**: SVD implementation for collaborative filtering
-- **TF-IDF Vectorization**: Content-based feature extraction
-- **KNN**: Item similarity computation with cosine distance
-- **Statistical Analysis**: Rating distribution and popularity metrics
-
-### Infrastructure
-
-- **Production Deployment**: Docker multi-stage builds with optimization
-- **API Gateway**: FastAPI with Uvicorn ASGI server
-- **Model Storage**: MLflow model registry with versioning
-- **Data Persistence**: Volume mounting for dataset and artifacts
-- **Scalable Architecture**: Handles 39,974 users and 3.4M predictions efficiently
-- **Docker Ready**: Multi-stage containerization for production deployment
-
-### Performance Metrics
-
-#### Production Model Comparison
-
-| Model | Success Rate | Performance Score | Unique Movies | Response Time | Architecture |
-|-------|-------------|------------------|---------------|---------------|--------------|
-| **Hybrid** | **100%** | **0.32** | **25 movies** | 77.7s | Multi-strategy ensemble |
-| Collaborative | 100% | 0.18 | 5 movies | 28.0s | SVD collaborative filtering |
-| Popularity | 100% | 0.16 | 5 movies | 31.1s | Popularity baseline |
-
-*Ultra-fast evaluation on 5 test users with performance scoring: success_rate × (1/response_time) × unique_movies*
-
-#### Detailed Performance Analysis
-
-**Hybrid Model Superiority:**
-- **Coverage Advantage**: 0.28% catalog coverage vs 0.00% for individual models
-
-## Training Pipeline
-
-### Unified Training Script
-
-LatentLens features a unified training pipeline that consolidates the entire ML workflow into a single command:
+Verify:
 
 ```bash
-# Basic training with default parameters
-python src/train.py
+# Docs (Swagger)
+curl http://localhost:8000/docs
 
-# Advanced training with custom configuration
-python src/train.py --experiment-name "production_v1" \
-                   --sample-size 10000 \
-                   --n-factors 100 \
-                   --n-epochs 50 \
-                   --config config.yaml
+# Health endpoint
+curl http://localhost:8000/health
+
+# Example recommendation
+curl http://localhost:8000/recommend/hybrid/1?top_n=5
 ```
 
-### Pipeline Architecture
+Notes:
+- The container may take 1–3 minutes to initialize models on first run if it needs to train or load artifacts.
+- If you need persistent data or MLflow tracking, mount volumes for `data/` and `mlruns/`.
 
-The training pipeline implements a cohesive workflow that:
-
-1. **Data Loading & Preprocessing**: Automatic MovieLens dataset loading with configurable sampling
-2. **Multi-Model Training**: Trains 4 recommendation strategies in parallel
-3. **Evaluation & Metrics**: Comprehensive model evaluation with MLflow tracking
-4. **Artifact Management**: Automatic saving of models, metrics, and configurations
-5. **MLflow Integration**: Complete experiment tracking and model registry
-
-### DVC Pipeline (Advanced Reproducibility)
-
-For maximum reproducibility, use the DVC pipeline:
+2) Local development (venv)
 
 ```bash
-# Initialize DVC (first time only)
-dvc init
-dvc remote add -d storage ./dvc_storage
-
-# Pull data and models
-dvc pull
-
-# Run complete pipeline
-dvc repro
-
-# View pipeline dependency graph
-dvc dag
-
-# Compare metrics across experiments
-dvc metrics show --all-branches
-```
-
-**Pipeline Stages**:
-```mermaid
-graph TD
-    A[prepare_data] --> B[train_model]
-    B --> C[evaluate_model]
-    B --> D[deploy_ready]
-```
-
-### Configuration Management
-
-**YAML Configuration** (`config.yaml`):
-```yaml
-data:
-  sample_size: 5000
-  test_size: 0.2
-
-svd:
-  n_factors: 100
-  n_epochs: 20
-  learning_rate: 0.005
-
-hybrid:
-  weights:
-    collaborative: 0.4
-    content_based: 0.3
-    item_similarity: 0.2
-    popularity: 0.1
-```
-
-**Command Line Arguments**:
-```bash
-python src/train.py --help
-# Shows all available parameters:
-# --experiment-name, --sample-size, --n-factors, 
-# --n-epochs, --k-neighbors, --eval-users, --config
-```
-
-### CI/CD Integration
-
-GitHub Actions workflow for automated training:
-
-```yaml
-# .github/workflows/train-model.yml
-name: 🤖 LatentLens Model Training Pipeline
-on:
-  workflow_dispatch:
-    inputs:
-      experiment_name:
-        description: 'MLflow experiment name'
-        default: 'github_actions_training'
-```
-
-**Manual Trigger**: Go to Actions → "LatentLens Model Training Pipeline" → "Run workflow"
-
-## Installation & Deployment
-
-### Production Deployment
-
-#### Docker Containerization (Recommended)
-
-```bash
-# Clone repository
+# Clone and enter repo
 git clone https://github.com/Gatoco/LatentLens.git
 cd LatentLens
 
-# Production deployment with Docker Compose
-docker-compose up -d
-
-# Verify deployment
-curl http://localhost:8001/health
-curl http://localhost:8001/recommend/hybrid/123?limit=10
-```
-
-#### Manual Container Build
-
-```bash
-# Build production image
-docker build -t latentlens:latest .
-
-# Run with volume mounting for data persistence
-docker run -d \
-  --name latentlens-api \
-  -p 8001:8000 \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/mlruns:/app/mlruns \
-  latentlens:latest
-```
-
-### Development Environment
-
-#### Prerequisites
-
-- Python 3.10 or higher
-- Docker and Docker Compose (for containerized deployment)
-- Minimum 8GB RAM (for MovieLens 25M dataset processing)
-- 10GB available disk space
-
-#### Local Development Setup
-
-```bash
-# Environment initialization
+# Create virtual env and activate (Windows PowerShell)
 python -m venv venv
-source venv/bin/activate  # Unix/Linux/macOS
-# .\venv\Scripts\Activate.ps1  # Windows PowerShell
+.\venv\Scripts\Activate.ps1
 
-# Dependency installation
+# Install dependencies
 pip install -r requirements.txt
 
-# Package installation in development mode
-pip install -e .
-
-# Verify installation
-python -c "from src.recommender import get_recommender; print('Installation successful')"
+# Run the API locally (uses uvicorn)
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-#### Dataset Configuration
+Then verify same endpoints as Docker Quickstart.
+
+3) Running with local data (optional, for full dataset)
+
+Place MovieLens 25M in `data/ml-25m/` (see `data/ml-25m/README.txt`). For faster iteration use a smaller sample via `src/data_loader` or provide config to use a sample.
+
+4) Tests and a quick verification script
+
+There is a small test script for verifying Docker deployment at `scripts/test_docker_deployment.py`.
+
+Run it locally (requires docker installed):
 
 ```bash
-# Dataset download (if not included)
-# Download MovieLens 25M from https://grouplens.org/datasets/movielens/
-# Extract to data/ml-25m/ directory
-
-# Verify dataset structure
-ls data/ml-25m/
-# Expected files: ratings.csv, movies.csv, tags.csv, links.csv, genome-*
+python scripts/test_docker_deployment.py
 ```
 
-## API Documentation
+5) CI/CD and Secrets
 
-### Core Endpoints
+- Workflow: `.github/workflows/docker-deploy.yml` builds, tags and pushes images to Docker Hub when you push to `main`.
+- Add these GitHub Actions secrets in repository settings:
+  - `DOCKER_USERNAME` (e.g. `gatoco`)
+  - `DOCKER_PASSWORD` (Docker Hub access token)
 
-#### Health Check
-```http
-GET /health
+Secrets are used to login and push images; no credentials are stored in code.
+
+6) Common commands (copy-and-paste)
+
+Docker build & push (manual):
+```bash
+docker build -t gatoco/latentlens:latest .
+docker tag gatoco/latentlens:latest gatoco/latentlens:v1.0.0
+docker push gatoco/latentlens:latest
+docker push gatoco/latentlens:v1.0.0
 ```
 
-**Response:**
+Run with mounted volumes (persist data & mlruns):
+```bash
+docker run -d --name latentlens -p 8000:8000 \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/mlruns:/app/mlruns" \
+  gatoco/latentlens:latest
+```
+
+7) Troubleshooting
+
+- If `curl http://localhost:8000/health` returns no response: wait 1–3 minutes for model initialization on first run.
+- If container exits immediately: check logs:
+  ```bash
+  docker logs <container-id>
+  ```
+- If using full dataset and you run out of memory: use a sample or increase VM memory for Docker.
+
+8) Contributing & Next steps
+
+- Run linters/tests before opening PRs. See `.github/workflows/docker-deploy.yml` for CI steps.
+- To reproduce training or experiments: use `src/train.py` or the DVC pipeline (`dvc repro`) if you have DVC configured and the data available.
+
+9) License
+
+MIT — see `LICENSE`.
+
+If you want, puedo ahora:
+- añadir un `Makefile` con shortcuts (`make setup`, `make run-docker`, `make test`), o
+- generar un script `quickstart.sh`/`quickstart.ps1` para automatizar los pasos anteriores.
+
+---
+
+End of quickstart.
 ```json
 {
   "status": "ok",
