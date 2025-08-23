@@ -46,7 +46,7 @@ class ColdStartValidator:
         try:
             logger.info("Initializing recommendation services...")
 
-            from src.hybrid_recommendation_service import HybridRecommendationService
+            from hybrid_recommendation_service import HybridRecommendationService
 
             self.hybrid_service = HybridRecommendationService(data_path=self.data_path)
             self.hybrid_service.initialize()

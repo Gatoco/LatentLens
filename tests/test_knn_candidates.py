@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import Mock, patch, MagicMock
-from src.data_loader import DataLoader
+from data_loader import DataLoader
 
 class TestKNNCandidates:
     """Comprehensive tests for KNN-based candidate generation."""

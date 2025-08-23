@@ -434,7 +434,7 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
     
     try:
-        from src.data_loader import DataLoader
+        from data_loader import DataLoader
         
         # Load data
         data_loader = DataLoader('../data/ml-25m')

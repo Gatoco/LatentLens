@@ -69,7 +69,7 @@ class TestHybridServiceInitialization:
     def test_hybrid_service_creation(self):
         """Test that hybrid service can be created."""
         try:
-            from src.hybrid_recommendation_service import HybridRecommendationService
+            from hybrid_recommendation_service import HybridRecommendationService
 
             service = HybridRecommendationService(data_path="data/ml-25m")
 
@@ -85,7 +85,7 @@ class TestHybridServiceInitialization:
     def test_hybrid_service_initialization(self, mock_initialize):
         """Test hybrid service initialization."""
         try:
-            from src.hybrid_recommendation_service import HybridRecommendationService
+            from hybrid_recommendation_service import HybridRecommendationService
 
             service = HybridRecommendationService(data_path="data/ml-25m")
             service.initialize()

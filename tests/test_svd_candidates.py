@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from unittest.mock import Mock, patch, MagicMock
 import time
-from src.data_loader import DataLoader
+from data_loader import DataLoader
 
 class TestSVDCandidates:
     """Comprehensive tests for SVD-based candidate generation in recommendation system."""

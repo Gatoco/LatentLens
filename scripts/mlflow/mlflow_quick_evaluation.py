@@ -25,8 +25,8 @@ import pandas as pd
 import numpy as np
 
 # Import our recommendation services
-from src.recommender import get_recommender
-from src.data_loader import DataLoader
+from recommender import get_recommender
+from data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

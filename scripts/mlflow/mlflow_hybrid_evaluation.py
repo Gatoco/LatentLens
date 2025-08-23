@@ -27,10 +27,10 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 # Import our recommendation services
-from src.recommender import get_recommender
-from src.recommendation_service import RecommendationService
-from src.data_loader import DataLoader
-from src.ranking_metrics import RankingMetrics
+from recommender import get_recommender
+from recommendation_service import RecommendationService
+from data_loader import DataLoader
+from ranking_metrics import RankingMetrics
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

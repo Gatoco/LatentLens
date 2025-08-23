@@ -13,7 +13,7 @@ from pprint import pprint
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from src.recommender import get_recommender
+from recommender import get_recommender
 
 def test_fixed_services():
     """Test the fixed recommendation services"""

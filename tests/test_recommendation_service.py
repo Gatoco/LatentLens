@@ -25,7 +25,7 @@ class TestRecommendationServiceInitialization:
     def test_recommendation_service_creation(self):
         """Test that recommendation service can be created."""
         try:
-            from src.recommendation_service import RecommendationService
+            from recommendation_service import RecommendationService
 
             service = RecommendationService()
 
@@ -39,7 +39,7 @@ class TestRecommendationServiceInitialization:
     def test_service_initialization(self, mock_initialize):
         """Test service initialization process."""
         try:
-            from src.recommendation_service import RecommendationService
+            from recommendation_service import RecommendationService
 
             service = RecommendationService()
             service.initialize()

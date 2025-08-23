@@ -13,11 +13,11 @@ Main Components:
 
 Usage:
     # For API development
-    from src.main import app
+    from main import app
     
     # For data processing
-    from src.data_loader import load_and_prepare_data
-    from src.preprocessing import extract_movie_title_without_year
+    from data_loader import load_and_prepare_data
+    from preprocessing import extract_movie_title_without_year
 
 Author: LatentLens Team
 License: MIT

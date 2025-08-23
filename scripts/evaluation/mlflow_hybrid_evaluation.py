@@ -281,7 +281,7 @@ class MLflowHybridEvaluator:
     def initialize_hybrid_service(self):
         """Initialize hybrid recommendation service."""
         try:
-            from src.hybrid_recommendation_service import HybridRecommendationService
+            from hybrid_recommendation_service import HybridRecommendationService
 
             self.hybrid_service = HybridRecommendationService(data_path=self.data_path)
             self.hybrid_service.initialize()

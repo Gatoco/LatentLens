@@ -21,8 +21,8 @@ from typing import Dict, List, Any
 # Add src to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.recommender import get_recommender
-from src.data_loader import DataLoader
+from recommender import get_recommender
+from data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
