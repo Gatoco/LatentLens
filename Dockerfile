@@ -42,8 +42,20 @@ COPY ./tests /app/tests
 COPY ./data /app/data
 COPY setup.py /app/
 
+# Descargar dataset MovieLens (ml-latest-small ~1MB) para demo self-contained
+# Si el dataset completo (ml-25m vía DVC) está presente, se usa ese en su lugar
+RUN python -c "import os, zipfile, urllib.request; dst='/app/data/ml-25m'; \
+os.makedirs(dst, exist_ok=True) if not os.path.exists(os.path.join(dst, 'ratings.csv')) else None; \
+(urllib.request.urlretrieve('https://files.grouplens.org/datasets/movielens/ml-latest-small.zip', '/tmp/ml.zip') if not os.path.exists(os.path.join(dst, 'ratings.csv')) else None); \
+zipfile.ZipFile('/tmp/ml.zip').extractall('/tmp/ml') if os.path.exists('/tmp/ml.zip') else None; \
+[open(os.path.join(dst, f), 'wb').write(open(f'/tmp/ml/ml-latest-small/{f}', 'rb').read()) for f in ('ratings.csv', 'movies.csv', 'tags.csv') if os.path.exists('/tmp/ml.zip')]; \
+os.remove('/tmp/ml.zip') if os.path.exists('/tmp/ml.zip') else None"
+
 # Instalamos el paquete en modo editable para que pytest funcione
 RUN pip install -e .
+
+# Directorios runtime (logs, datos de MLflow)
+RUN mkdir -p /app/logs /app/mlruns && chmod -R 777 /app/logs /app/mlruns
 
 # Exponemos el puerto y definimos el comando de inicio, como antes.
 EXPOSE 8000
