@@ -7,6 +7,7 @@
 ![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.2-red.svg)
 ![Pandas](https://img.shields.io/badge/pandas-2.3.1-yellow.svg)
 ![Docker](https://img.shields.io/badge/docker-containerized-blue.svg)
+[![Docker Hub](https://img.shields.io/badge/docker-gatoco%2Flatentlens-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/gatoco/latentlens)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 A professional-grade hybrid movie recommendation system that combines collaborative filtering and content-based approaches, featuring advanced ranking metrics and MLOps integration with MLflow.
@@ -103,6 +104,21 @@ make run-local
 Open your browser to `http://localhost:8000/docs` for interactive API documentation.
 
 ## Docker Deployment
+
+### Imagen publicada (Docker Hub)
+
+Imagen self-contained con dataset MovieLens ml-latest-small integrado (~100k ratings):
+
+```bash
+docker pull gatoco/latentlens:latest
+
+docker run -d --name latentlens -p 8000:8000 gatoco/latentlens:latest
+
+# Verificar
+curl http://localhost:8000/health
+# Docs interactivos
+open http://localhost:8000/docs
+```
 
 ### Build and Run
 
